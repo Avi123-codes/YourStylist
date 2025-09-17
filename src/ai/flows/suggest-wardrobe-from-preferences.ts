@@ -10,6 +10,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+export type SuggestWardrobeFromPreferencesInput = {
+  style: string;
+  color: string;
+  bodyScanDataUri: string;
+  trendData?: string;
+};
 const SuggestWardrobeFromPreferencesInputSchema = z.object({
   style: z
     .string()
@@ -24,10 +30,12 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
     ),
   trendData: z.string().optional().describe('Trend data to incorporate into the suggestions.'),
 });
-export type SuggestWardrobeFromPreferencesInput = z.infer<
-  typeof SuggestWardrobeFromPreferencesInputSchema
->;
 
+export type SuggestWardrobeFromPreferencesOutput = {
+  suggestions: string[];
+  suitabilityScores: number[];
+  images: string[];
+};
 const SuggestWardrobeFromPreferencesOutputSchema = z.object({
   suggestions: z
     .array(z.string())
@@ -39,15 +47,38 @@ const SuggestWardrobeFromPreferencesOutputSchema = z.object({
     .array(z.string())
     .describe('An array of data URIs for the generated images of each clothing item.'),
 });
-export type SuggestWardrobeFromPreferencesOutput = z.infer<
-  typeof SuggestWardrobeFromPreferencesOutputSchema
->;
 
 export async function suggestWardrobeFromPreferences(
   input: SuggestWardrobeFromPreferencesInput
 ): Promise<SuggestWardrobeFromPreferencesOutput> {
   return suggestWardrobeFromPreferencesFlow(input);
 }
+
+const suggestionPrompt = ai.definePrompt({
+  name: 'suggestWardrobeFromPreferencesPrompt',
+  input: {schema: SuggestWardrobeFromPreferencesInputSchema},
+  output: {
+    schema: z.object({
+      suggestions: z
+        .array(z.string())
+        .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
+      suitabilityScores: z
+        .array(z.number())
+        .describe('An array of suitability scores for each clothing item suggestion.'),
+    }),
+  },
+  prompt: `You are a personal stylist AI. You will suggest 4 clothing items based on the user's preferences, body scan data, and trend data.
+
+  Preferences:
+  Style: {{{style}}}
+  Color: {{{color}}}
+  Body Scan: {{media url=bodyScanDataUri}}
+  Trend Data: {{{trendData}}}
+
+  Suggest 4 clothing items incorporating trend data and suitability scores. Provide the output as a JSON object with "suggestions" and "suitabilityScores" fields.
+  `,
+});
+
 
 const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
   {
@@ -56,31 +87,6 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
     outputSchema: SuggestWardrobeFromPreferencesOutputSchema,
   },
   async input => {
-    const suggestionPrompt = ai.definePrompt({
-      name: 'suggestWardrobeFromPreferencesPrompt',
-      input: {schema: SuggestWardrobeFromPreferencesInputSchema},
-      output: {
-        schema: z.object({
-          suggestions: z
-            .array(z.string())
-            .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
-          suitabilityScores: z
-            .array(z.number())
-            .describe('An array of suitability scores for each clothing item suggestion.'),
-        }),
-      },
-      prompt: `You are a personal stylist AI. You will suggest 4 clothing items based on the user's preferences, body scan data, and trend data.
-
-      Preferences:
-      Style: {{{style}}}
-      Color: {{{color}}}
-      Body Scan: {{media url=bodyScanDataUri}}
-      Trend Data: {{{trendData}}}
-    
-      Suggest 4 clothing items incorporating trend data and suitability scores. Provide the output as a JSON object with "suggestions" and "suitabilityScores" fields.
-      `,
-    });
-
     const {output: suggestionsOutput} = await suggestionPrompt(input);
     if (!suggestionsOutput) {
       throw new Error('Could not generate wardrobe suggestions.');
