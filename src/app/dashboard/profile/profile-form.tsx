@@ -1,0 +1,180 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useUserProfile } from "@/context/user-profile-context";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
+import { Camera, Trash2 } from "lucide-react";
+import { ChangeEvent, useRef } from "react";
+
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  age: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid age." }),
+  height: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid height." }),
+  weight: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid weight." }),
+  gender: z.string(),
+});
+
+export function ProfileForm() {
+  const { profile, setProfile } = useUserProfile();
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: profile.name,
+      age: profile.age,
+      height: profile.height,
+      weight: profile.weight,
+      gender: profile.gender,
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof profileSchema>) {
+    setProfile(prev => ({ ...prev, ...values }));
+    toast({
+      title: "Profile Updated",
+      description: "Your personal details have been saved.",
+    });
+  }
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>, type: 'faceScan' | 'bodyScan') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile(prev => ({ ...prev, [type]: reader.result as string }));
+        toast({ title: `${type === 'faceScan' ? 'Face' : 'Body'} Scan Updated` });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const ImageUploader = ({ type }: { type: 'faceScan' | 'bodyScan' }) => {
+    const imageSrc = type === 'faceScan' ? profile.faceScan : profile.bodyScan;
+    const title = type === 'faceScan' ? 'Face Scan' : 'Body Scan';
+    const description = type === 'faceScan' ? 'Used for hairstyle suggestions.' : 'Used for wardrobe recommendations.';
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          <div 
+            className="relative w-48 h-48 rounded-lg border-2 border-dashed bg-muted flex items-center justify-center overflow-hidden cursor-pointer"
+            onClick={() => inputRef.current?.click()}
+            >
+            {imageSrc ? (
+              <Image src={imageSrc} alt={title} fill objectFit="cover" />
+            ) : (
+              <Camera className="w-12 h-12 text-muted-foreground" />
+            )}
+             <Input
+                id={type}
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => handleImageUpload(e, type)}
+              />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => inputRef.current?.click()}>
+              {imageSrc ? 'Change Scan' : 'Upload Scan'}
+            </Button>
+            {imageSrc && (
+              <Button variant="destructive" size="icon" onClick={() => setProfile(p => ({...p, [type]: null}))}>
+                <Trash2 className="w-4 h-4" />
+                <span className="sr-only">Remove {title}</span>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="font-headline">Personal Details</CardTitle>
+          <CardDescription>Update your information to get personalized results.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="age" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 30" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="gender" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <FormControl><Input placeholder="e.g., male" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField control={form.control} name="height" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Height (cm)</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 180" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="weight" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 75" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <Button type="submit">Save Changes</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-8">
+        <ImageUploader type="faceScan" />
+        <ImageUploader type="bodyScan" />
+      </div>
+    </div>
+  );
+}
