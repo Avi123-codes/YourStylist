@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const SuggestWardrobeFromPreferencesInputSchema = z.object({
+const SuggestWardrobeFromPreferencesInputSchema = z.object({
   style: z
     .string()
     .describe('The preferred style of clothing (e.g., casual, formal, business).'),
@@ -28,7 +28,7 @@ export type SuggestWardrobeFromPreferencesInput = z.infer<
   typeof SuggestWardrobeFromPreferencesInputSchema
 >;
 
-export const SuggestWardrobeFromPreferencesOutputSchema = z.object({
+const SuggestWardrobeFromPreferencesOutputSchema = z.object({
   suggestions: z
     .array(z.string())
     .describe('An array of 4 clothing item suggestions based on the provided preferences.'),

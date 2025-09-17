@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const SuggestHairstylesFromPhotoInputSchema = z.object({
+const SuggestHairstylesFromPhotoInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -21,7 +21,7 @@ export type SuggestHairstylesFromPhotoInput = z.infer<
   typeof SuggestHairstylesFromPhotoInputSchema
 >;
 
-export const SuggestHairstylesFromPhotoOutputSchema = z.array(
+const SuggestHairstylesFromPhotoOutputSchema = z.array(
   z.object({
     hairstyle: z.string().describe('The name of the suggested hairstyle.'),
     suitabilityScore: z
