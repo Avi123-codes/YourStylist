@@ -5,7 +5,10 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export type GenerateHairstyleImageInput = z.infer<typeof GenerateHairstyleImageInputSchema>;
+export type GenerateHairstyleImageInput = {
+  photoDataUri: string;
+  hairstyle: string;
+};
 const GenerateHairstyleImageInputSchema = z.object({
   photoDataUri: z
     .string()
@@ -15,7 +18,9 @@ const GenerateHairstyleImageInputSchema = z.object({
   hairstyle: z.string().describe('The name of the hairstyle to apply.'),
 });
 
-export type GenerateHairstyleImageOutput = z.infer<typeof GenerateHairstyleImageOutputSchema>;
+export type GenerateHairstyleImageOutput = {
+  imageUrl: string;
+};
 const GenerateHairstyleImageOutputSchema = z.object({
   imageUrl: z.string().describe('The data URI of the generated image.'),
 });
@@ -33,7 +38,7 @@ const generateHairstyleImageFlow = ai.defineFlow(
     outputSchema: GenerateHairstyleImageOutputSchema,
   },
   async ({photoDataUri, hairstyle}) => {
-    const {media} = await ai.generate({
+    const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: photoDataUri}},
@@ -46,10 +51,13 @@ const generateHairstyleImageFlow = ai.defineFlow(
       },
     });
 
-    if (!media.url) {
+    const imagePart = response.output?.message.content.find(part => part.media);
+
+    if (!imagePart || !imagePart.media?.url) {
+      console.error('Image generation failed. Full response:', JSON.stringify(response, null, 2));
       throw new Error('Image generation failed.');
     }
 
-    return {imageUrl: media.url};
+    return {imageUrl: imagePart.media.url};
   }
 );
