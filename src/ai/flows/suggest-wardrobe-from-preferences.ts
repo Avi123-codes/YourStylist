@@ -41,14 +41,6 @@ export async function suggestWardrobeFromPreferences(
   return suggestWardrobeFromPreferencesFlow(input);
 }
 
-const itemGenerationPrompt = ai.definePrompt({
-    name: 'itemGenerationPrompt',
-    input: { schema: z.string() },
-    output: { schema: z.string() },
-    prompt: `Generate a realistic image of the following clothing item: {{{input}}}. The image should be on a plain white background.`
-});
-
-
 const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
   {
     name: 'suggestWardrobeFromPreferencesFlow',

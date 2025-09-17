@@ -5,7 +5,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateHairstyleImageInputSchema = z.object({
+const GenerateHairstyleImageInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -17,7 +17,7 @@ export type GenerateHairstyleImageInput = z.infer<
   typeof GenerateHairstyleImageInputSchema
 >;
 
-export const GenerateHairstyleImageOutputSchema = z.object({
+const GenerateHairstyleImageOutputSchema = z.object({
   imageUrl: z.string().describe('The data URI of the generated image.'),
 });
 export type GenerateHairstyleImageOutput = z.infer<
