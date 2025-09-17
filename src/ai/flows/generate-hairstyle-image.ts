@@ -42,7 +42,7 @@ const generateHairstyleImageFlow = ai.defineFlow(
         },
       ],
       config: {
-        responseModalities: ['IMAGE'],
+        responseModalities: ['IMAGE', 'TEXT'],
       },
     });
 
