@@ -7,20 +7,21 @@ import { getWardrobeSuggestions } from '@/lib/actions';
 import type { SuggestWardrobeFromPreferencesOutput } from '@/ai/flows/suggest-wardrobe-from-preferences';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Bot, PartyPopper, Shirt } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export function WardrobeSuggestion() {
     const { profile } = useUserProfile();
     const [suggestions, setSuggestions] = useState<SuggestWardrobeFromPreferencesOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [style, setStyle] = useState('casual');
-    const [color, setColor] = useState('blue');
+    const [color, setColor] = useState('any');
     const { toast } = useToast();
 
     const handleSuggest = async () => {
@@ -92,7 +93,17 @@ export function WardrobeSuggestion() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="color">Preferred Color</Label>
-                                <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="e.g., blue, black" />
+                                <Select value={color} onValueChange={setColor}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a color preference" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="any">Any</SelectItem>
+                                        <SelectItem value="bright">Bright</SelectItem>
+                                        <SelectItem value="dark">Dark</SelectItem>
+                                        <SelectItem value="neutral">Neutral</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <Button onClick={handleSuggest} disabled={isLoading} size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
@@ -132,7 +143,7 @@ export function WardrobeSuggestion() {
                         {suggestions.suggestions.map((suggestion, index) => (
                             <Card key={index} className="flex flex-col overflow-hidden">
                                 <div className="relative w-full aspect-[3/4] bg-muted">
-                                     <Image src={`https://picsum.photos/seed/${index+20}/300/400`} data-ai-hint="clothing item" alt={suggestion} fill objectFit="cover" />
+                                     <Image src={suggestions.images[index]} data-ai-hint="clothing item" alt={suggestion} fill objectFit="cover" />
                                 </div>
                                 <div className="p-4 flex flex-col flex-grow">
                                     <h4 className="font-headline text-base flex-grow">{suggestion}</h4>

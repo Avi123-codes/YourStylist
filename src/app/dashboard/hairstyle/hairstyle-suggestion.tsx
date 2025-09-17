@@ -3,19 +3,23 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useUserProfile } from '@/context/user-profile-context';
-import { getHairstyleSuggestions } from '@/lib/actions';
+import { getHairstyleSuggestions, generateHairstyle } from '@/lib/actions';
 import type { SuggestHairstylesFromPhotoOutput } from '@/ai/flows/suggest-hairstyles-from-photo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, PartyPopper, Scissors } from 'lucide-react';
+import { Bot, PartyPopper, Scissors, Sparkles, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+
+type SuggestionWithImage = SuggestHairstylesFromPhotoOutput[0] & {imageUrl: string | null; isGenerating: boolean};
 
 export function HairstyleSuggestion() {
     const { profile } = useUserProfile();
-    const [suggestions, setSuggestions] = useState<SuggestHairstylesFromPhotoOutput | null>(null);
+    const [suggestions, setSuggestions] = useState<SuggestionWithImage[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
@@ -35,7 +39,7 @@ export function HairstyleSuggestion() {
         const result = await getHairstyleSuggestions({ photoDataUri: profile.faceScan });
 
         if (result.success && result.data) {
-            setSuggestions(result.data);
+            setSuggestions(result.data.map(s => ({...s, imageUrl: null, isGenerating: false})));
         } else {
             toast({
                 title: 'Error',
@@ -45,6 +49,43 @@ export function HairstyleSuggestion() {
         }
         setIsLoading(false);
     };
+
+    const handleGenerateImage = async (index: number) => {
+        if (!profile.faceScan || !suggestions) return;
+
+        setSuggestions(prev => {
+            if (!prev) return null;
+            const newSuggestions = [...prev];
+            newSuggestions[index].isGenerating = true;
+            return newSuggestions;
+        });
+
+        const suggestion = suggestions[index];
+        const result = await generateHairstyle({ photoDataUri: profile.faceScan, hairstyle: suggestion.hairstyle });
+        
+        if (result.success && result.data?.imageUrl) {
+             setSuggestions(prev => {
+                if (!prev) return null;
+                const newSuggestions = [...prev];
+                newSuggestions[index].imageUrl = result.data.imageUrl;
+                newSuggestions[index].isGenerating = false;
+                return newSuggestions;
+            });
+        } else {
+             toast({
+                title: 'Image Generation Failed',
+                description: result.error || 'Could not generate the hairstyle image.',
+                variant: 'destructive',
+            });
+             setSuggestions(prev => {
+                if (!prev) return null;
+                const newSuggestions = [...prev];
+                newSuggestions[index].isGenerating = false;
+                return newSuggestions;
+            });
+        }
+    };
+
 
     if (!profile.faceScan) {
         return (
@@ -91,7 +132,7 @@ export function HairstyleSuggestion() {
 
             {isLoading && (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => (
+                    {[...Array(3)].map((_, i) => (
                         <Card key={i}>
                             <CardHeader>
                                 <Skeleton className="h-6 w-3/4 rounded" />
@@ -122,9 +163,36 @@ export function HairstyleSuggestion() {
                                 </CardHeader>
                                 <CardContent className="flex-grow flex flex-col gap-4">
                                     <div className="relative w-full aspect-square rounded-lg bg-muted overflow-hidden">
-                                        <Image src={`https://picsum.photos/seed/${index+10}/400/400`} data-ai-hint="hairstyle model" alt={suggestion.hairstyle} fill objectFit="cover" />
+                                        {suggestion.isGenerating && (
+                                            <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-10">
+                                                <Wand2 className="w-10 h-10 text-white animate-pulse" />
+                                                <p className="text-white mt-2">Generating...</p>
+                                            </div>
+                                        )}
+                                        {suggestion.imageUrl ? (
+                                            <Image src={suggestion.imageUrl} alt={suggestion.hairstyle} fill objectFit="cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-2 text-center p-4">
+                                                <Sparkles className="w-8 h-8 text-primary" />
+                                                 <p className="text-sm text-muted-foreground">Preview this hairstyle on you!</p>
+                                                <Button size="sm" onClick={() => handleGenerateImage(index)} disabled={suggestion.isGenerating}>
+                                                    Generate Image
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                                    <Tabs defaultValue="extrovert" className="w-full">
+                                        <TabsList className="grid w-full grid-cols-2">
+                                            <TabsTrigger value="extrovert">Extrovert</TabsTrigger>
+                                            <TabsTrigger value="introvert">Introvert</TabsTrigger>
+                                        </TabsList>
+                                        <TabsContent value="extrovert">
+                                            <p className="text-sm text-muted-foreground">{suggestion.description.extrovert}</p>
+                                        </TabsContent>
+                                        <TabsContent value="introvert">
+                                             <p className="text-sm text-muted-foreground font-style: italic">"{suggestion.description.introvert}"</p>
+                                        </TabsContent>
+                                    </Tabs>
                                     <Progress value={suggestion.suitabilityScore * 100} className="mt-auto" />
                                 </CardContent>
                             </Card>

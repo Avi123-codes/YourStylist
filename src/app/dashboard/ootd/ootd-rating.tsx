@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Camera, Star, ThumbsUp, Wrench } from 'lucide-react';
+import { Bot, Camera, Star, ThumbsUp, Wrench, Share2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function OotdRating() {
@@ -54,6 +54,37 @@ export function OotdRating() {
             });
         }
         setIsLoading(false);
+    };
+
+    const handleShare = async () => {
+        if (!ootdImage || !rating) return;
+        
+        try {
+            const response = await fetch(ootdImage);
+            const blob = await response.blob();
+            const file = new File([blob], "ootd.png", { type: "image/png" });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'My OOTD Rating',
+                    text: `I got my outfit rated by YourStylist! ✨\nRating: ${rating.rating}/10\n\n${rating.suggestions}`,
+                });
+            } else {
+                toast({
+                    title: 'Sharing not supported',
+                    description: 'Your browser does not support sharing files.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+             toast({
+                title: 'Error Sharing',
+                description: 'Something went wrong while trying to share.',
+                variant: 'destructive',
+            });
+            console.error('Error sharing:', error);
+        }
     };
 
     return (
@@ -113,11 +144,15 @@ export function OotdRating() {
                 
                 {rating && (
                      <Card className="shadow-lg">
-                        <CardHeader>
+                        <CardHeader className="flex flex-row justify-between items-start">
                             <CardTitle className="font-headline text-2xl flex items-center gap-3">
                                 <ThumbsUp className="w-7 h-7 text-primary" />
                                 Your Rating: {rating.rating}/10
                             </CardTitle>
+                             <Button variant="ghost" size="icon" onClick={handleShare}>
+                                <Share2 className="w-5 h-5" />
+                                <span className="sr-only">Share</span>
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">

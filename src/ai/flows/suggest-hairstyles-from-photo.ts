@@ -29,7 +29,10 @@ const SuggestHairstylesFromPhotoOutputSchema = z.array(
       .describe(
         'A score indicating the suitability of the hairstyle for the user, ranging from 0 to 1.'
       ),
-    description: z.string().describe('A description of the hairstyle.'),
+    description: z.object({
+        introvert: z.string().describe('A short, 5-6 word description of the hairstyle.'),
+        extrovert: z.string().describe('A longer, 2-3 line description of the hairstyle.'),
+    })
   })
 );
 export type SuggestHairstylesFromPhotoOutput = z.infer<
@@ -48,7 +51,8 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestHairstylesFromPhotoOutputSchema},
   prompt: `You are a professional hairstylist with a keen eye for matching hairstyles to facial features.
 
-  Based on the photo provided, suggest ten hairstyles that would be most suitable for the user.
+  Based on the photo provided, suggest five hairstyles that would be most suitable for the user.
+  For each hairstyle, provide an "introvert" description (5-6 words) and an "extrovert" description (2-3 lines).
 
   Rank the hairstyles by suitability, with the most suitable hairstyle listed first.
 
