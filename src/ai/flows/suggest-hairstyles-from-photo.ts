@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SuggestHairstylesFromPhotoInputSchema = z.object({
+export const SuggestHairstylesFromPhotoInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -21,7 +21,7 @@ export type SuggestHairstylesFromPhotoInput = z.infer<
   typeof SuggestHairstylesFromPhotoInputSchema
 >;
 
-const SuggestHairstylesFromPhotoOutputSchema = z.array(
+export const SuggestHairstylesFromPhotoOutputSchema = z.array(
   z.object({
     hairstyle: z.string().describe('The name of the suggested hairstyle.'),
     suitabilityScore: z
@@ -30,9 +30,17 @@ const SuggestHairstylesFromPhotoOutputSchema = z.array(
         'A score indicating the suitability of the hairstyle for the user, ranging from 0 to 1.'
       ),
     description: z.object({
-        introvert: z.string().describe('A short, 5-6 word description of the hairstyle.'),
-        extrovert: z.string().describe('A longer, 2-3 line description of the hairstyle.'),
-    })
+      introvert: z
+        .string()
+        .describe(
+          'A short, 5-6 word phrase an introvert could say to their barber to ask for this hairstyle.'
+        ),
+      extrovert: z
+        .string()
+        .describe(
+          'A longer, 2-3 line phrase an extrovert could say to their barber to ask for this hairstyle, perhaps with some small talk.'
+        ),
+    }),
   })
 );
 export type SuggestHairstylesFromPhotoOutput = z.infer<
@@ -52,7 +60,10 @@ const prompt = ai.definePrompt({
   prompt: `You are a professional hairstylist with a keen eye for matching hairstyles to facial features.
 
   Based on the photo provided, suggest five hairstyles that would be most suitable for the user.
-  For each hairstyle, provide an "introvert" description (5-6 words) and an "extrovert" description (2-3 lines).
+
+  For each hairstyle, provide:
+  1. An "introvert" description: a short, 5-6 word phrase someone could say to their barber to ask for the cut.
+  2. An "extrovert" description: a more descriptive 2-3 line phrase an extrovert could say to their barber, maybe including some friendly chatter.
 
   Rank the hairstyles by suitability, with the most suitable hairstyle listed first.
 

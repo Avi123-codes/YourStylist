@@ -10,9 +10,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SuggestWardrobeFromPreferencesInputSchema = z.object({
-  style: z.string().describe('The preferred style of clothing (e.g., casual, formal, business).'),
-  color: z.string().describe('The preferred color of clothing (e.g. any, bright, dark, neutral).'),
+export const SuggestWardrobeFromPreferencesInputSchema = z.object({
+  style: z
+    .string()
+    .describe('The preferred style of clothing (e.g., casual, formal, business).'),
+  color: z
+    .string()
+    .describe('The preferred color of clothing (e.g. any, bright, dark, neutral).'),
   bodyScanDataUri: z
     .string()
     .describe(
@@ -20,9 +24,11 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
     ),
   trendData: z.string().optional().describe('Trend data to incorporate into the suggestions.'),
 });
-export type SuggestWardrobeFromPreferencesInput = z.infer<typeof SuggestWardrobeFromPreferencesInputSchema>;
+export type SuggestWardrobeFromPreferencesInput = z.infer<
+  typeof SuggestWardrobeFromPreferencesInputSchema
+>;
 
-const SuggestWardrobeFromPreferencesOutputSchema = z.object({
+export const SuggestWardrobeFromPreferencesOutputSchema = z.object({
   suggestions: z
     .array(z.string())
     .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
@@ -33,7 +39,9 @@ const SuggestWardrobeFromPreferencesOutputSchema = z.object({
     .array(z.string())
     .describe('An array of data URIs for the generated images of each clothing item.'),
 });
-export type SuggestWardrobeFromPreferencesOutput = z.infer<typeof SuggestWardrobeFromPreferencesOutputSchema>;
+export type SuggestWardrobeFromPreferencesOutput = z.infer<
+  typeof SuggestWardrobeFromPreferencesOutputSchema
+>;
 
 export async function suggestWardrobeFromPreferences(
   input: SuggestWardrobeFromPreferencesInput
@@ -47,18 +55,19 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
     inputSchema: SuggestWardrobeFromPreferencesInputSchema,
     outputSchema: SuggestWardrobeFromPreferencesOutputSchema,
   },
-  async (input) => {
+  async input => {
     const suggestionPrompt = ai.definePrompt({
       name: 'suggestWardrobeFromPreferencesPrompt',
       input: {schema: SuggestWardrobeFromPreferencesInputSchema},
-      output: {schema: z.object({
+      output: {
+        schema: z.object({
           suggestions: z
             .array(z.string())
             .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
           suitabilityScores: z
             .array(z.number())
             .describe('An array of suitability scores for each clothing item suggestion.'),
-        })
+        }),
       },
       prompt: `You are a personal stylist AI. You will suggest 4 clothing items based on the user's preferences, body scan data, and trend data.
 
@@ -71,25 +80,25 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
       Suggest 4 clothing items incorporating trend data and suitability scores. Provide the output as a JSON object with "suggestions" and "suitabilityScores" fields.
       `,
     });
-    
-    const { output: suggestionsOutput } = await suggestionPrompt(input);
+
+    const {output: suggestionsOutput} = await suggestionPrompt(input);
     if (!suggestionsOutput) {
-        throw new Error("Could not generate wardrobe suggestions.");
+      throw new Error('Could not generate wardrobe suggestions.');
     }
-    
-    const imageGenerationPromises = suggestionsOutput.suggestions.map(async (suggestion) => {
-        const { media } = await ai.generate({
-            model: 'googleai/imagen-4.0-fast-generate-001',
-            prompt: `a realistic photo of a single ${suggestion} on a white background, studio lighting`,
-        });
-        return media.url;
+
+    const imageGenerationPromises = suggestionsOutput.suggestions.map(async suggestion => {
+      const {media} = await ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: `a realistic photo of a single ${suggestion} on a white background, studio lighting`,
+      });
+      return media.url;
     });
 
     const images = await Promise.all(imageGenerationPromises);
-    
+
     return {
-        ...suggestionsOutput,
-        images: images.filter((img): img is string => !!img)
+      ...suggestionsOutput,
+      images: images.filter((img): img is string => !!img),
     };
   }
 );

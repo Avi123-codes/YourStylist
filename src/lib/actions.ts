@@ -1,9 +1,9 @@
 'use server';
 
-import { rateOutfitAndSuggestImprovements, OutfitRatingAndSuggestionsInput } from '@/ai/flows/outfit-rating-and-suggestions';
-import { suggestHairstylesFromPhoto, SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
-import { suggestWardrobeFromPreferences, SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
-import { generateHairstyleImage, GenerateHairstyleImageInput } from '@/ai/flows/generate-hairstyle-image';
+import { rateOutfitAndSuggestImprovements, type OutfitRatingAndSuggestionsInput } from '@/ai/flows/outfit-rating-and-suggestions';
+import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
+import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
+import { generateHairstyleImage, type GenerateHairstyleImageInput } from '@/ai/flows/generate-hairstyle-image';
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
     try {

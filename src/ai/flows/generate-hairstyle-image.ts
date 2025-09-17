@@ -5,7 +5,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateHairstyleImageInputSchema = z.object({
+export const GenerateHairstyleImageInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -13,16 +13,12 @@ const GenerateHairstyleImageInputSchema = z.object({
     ),
   hairstyle: z.string().describe('The name of the hairstyle to apply.'),
 });
-export type GenerateHairstyleImageInput = z.infer<
-  typeof GenerateHairstyleImageInputSchema
->;
+export type GenerateHairstyleImageInput = z.infer<typeof GenerateHairstyleImageInputSchema>;
 
-const GenerateHairstyleImageOutputSchema = z.object({
+export const GenerateHairstyleImageOutputSchema = z.object({
   imageUrl: z.string().describe('The data URI of the generated image.'),
 });
-export type GenerateHairstyleImageOutput = z.infer<
-  typeof GenerateHairstyleImageOutputSchema
->;
+export type GenerateHairstyleImageOutput = z.infer<typeof GenerateHairstyleImageOutputSchema>;
 
 export async function generateHairstyleImage(
   input: GenerateHairstyleImageInput
@@ -46,7 +42,7 @@ const generateHairstyleImageFlow = ai.defineFlow(
         },
       ],
       config: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE'],
       },
     });
 
