@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Bot, PartyPopper, Shirt } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -93,17 +92,7 @@ export function WardrobeSuggestion() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="color">Preferred Color</Label>
-                                <Select value={color} onValueChange={setColor}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a color preference" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="any">Any</SelectItem>
-                                        <SelectItem value="bright">Bright</SelectItem>
-                                        <SelectItem value="dark">Dark</SelectItem>
-                                        <SelectItem value="neutral">Neutral</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="e.g., any, blue, dark" />
                             </div>
                         </div>
                         <Button onClick={handleSuggest} disabled={isLoading} size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
