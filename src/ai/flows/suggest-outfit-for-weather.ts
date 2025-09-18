@@ -10,13 +10,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getCurrentWeather } from '@/ai/tools/weather';
 
-export const SuggestOutfitForWeatherInputSchema = z.object({
+const SuggestOutfitForWeatherInputSchema = z.object({
     city: z.string().describe('The city where the user wants to wear the outfit.'),
     style_preference: z.string().optional().describe('The user\'s preferred style, e.g., "casual", "business", "chic".'),
 });
 export type SuggestOutfitForWeatherInput = z.infer<typeof SuggestOutfitForWeatherInputSchema>;
 
-export const SuggestOutfitForWeatherOutputSchema = z.object({
+const SuggestOutfitForWeatherOutputSchema = z.object({
     outfit: z.object({
         top: z.string().describe('A suggested top, e.g., "Lightweight linen shirt".'),
         bottom: z.string().describe('Suggested bottoms, e.g., "Beige chino shorts".'),
