@@ -140,27 +140,18 @@ export function ClosetOrganizer() {
                             <AlertTitle>Stylist's Note</AlertTitle>
                             <AlertDescription>{suggestion.reasoning}</AlertDescription>
                         </Alert>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {suggestion.outfit.map(item => (
-                                <Card key={item.itemName}>
-                                    <CardContent className="p-0">
-                                        <div className="relative aspect-square">
-                                            {item.imageDataUri ? (
-                                                <Image src={item.imageDataUri} alt={item.itemName} fill className="object-cover rounded-t-lg" />
-                                            ) : (
-                                                <div className="w-full h-full bg-muted rounded-t-lg flex items-center justify-center">
-                                                    <Shirt className="w-10 h-10 text-muted-foreground"/>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-3">
-                                            <p className="font-semibold">{item.itemName}</p>
-                                            <p className="text-sm text-muted-foreground">{item.category}</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
+                        <Card>
+                           <CardContent className="p-4">
+                                <h4 className="font-semibold mb-2">Suggested Items:</h4>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {suggestion.outfit.map(item => (
+                                        <li key={item.itemName}>
+                                            <span className="font-semibold">{item.itemName}</span> ({item.category})
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
                     </CardContent>
                 </Card>
             )}
