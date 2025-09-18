@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, PartyPopper, Shirt, Palette, ExternalLink, Copy } from 'lucide-react';
+import { Bot, PartyPopper, Shirt, Palette, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -88,11 +88,6 @@ export function WardrobeSuggestion() {
             });
         }
         setIsAnalyzingColor(false);
-    };
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast({ title: 'Copied to clipboard!', description: text });
     };
 
 
@@ -251,12 +246,10 @@ export function WardrobeSuggestion() {
                                     </div>
                                 </div>
                                 <CardContent className="pt-0 space-y-2">
-                                     <a href={suggestion.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2 truncate">
-                                        <ExternalLink className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{suggestion.url}</span>
-                                     </a>
-                                    <Button variant="outline" size="sm" className="w-full" onClick={() => copyToClipboard(suggestion.url)}>
-                                        <Copy className="mr-2 w-4 h-4" /> Copy Link
-                                    </Button>
+                                     <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <ShoppingCart className="w-4 h-4 flex-shrink-0" /> 
+                                        <span>Find at: <span className='font-semibold text-foreground'>{suggestion.store}</span></span>
+                                     </div>
                                 </CardContent>
                             </Card>
                         ))}

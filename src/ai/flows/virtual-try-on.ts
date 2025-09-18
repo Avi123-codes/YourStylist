@@ -26,12 +26,13 @@ const VirtualTryOnInputSchema = z.object({
     gender: z.string(),
     age: z.string(),
   }).describe("The user's profile information."),
+  occasion: z.string().describe("The occasion the user is dressing for, e.g., 'Date Night', 'Casual Hangout'."),
 });
 export type VirtualTryOnInput = z.infer<typeof VirtualTryOnInputSchema>;
 
 const VirtualTryOnOutputSchema = z.object({
   rating: z.number().describe('The rating of the outfit out of 10.'),
-  suggestions: z.string().describe('Specific, detailed suggestions and the reasoning for the rating, considering color theory, fit for the user\'s height, and overall coherence of the outfit.'),
+  suggestions: z.string().describe('A concise (6-7 lines) set of specific, detailed suggestions and the reasoning for the rating, considering the occasion, color theory, fit for the user\'s height, and overall coherence of the outfit.'),
 });
 export type VirtualTryOnOutput = z.infer<typeof VirtualTryOnOutputSchema>;
 
@@ -60,15 +61,18 @@ const prompt = ai.definePrompt({
     - Category: {{{this.category}}}
       - Image: {{media url=this.imageDataUri}}
     {{/each}}
+    
+    OCCASION: {{{occasion}}}
 
     ANALYSIS:
     Based on all the information above, please provide a rating and detailed suggestions.
 
-    Your "suggestions" should include your thought process. Explain WHY you are giving this rating. Consider the following:
-    1.  **Color Coordination & Theory:** Do the colors of the items complement each other? Do they work well with the user's likely skin tone (based on a general analysis)?
-    2.  **Fit & Proportions:** How will these items likely fit on someone with the user's height and body shape? Do they create a balanced silhouette?
-    3.  **Overall Cohesion:** Does the outfit tell a coherent style story? Are the items appropriate to be worn together?
-    4.  **Actionable Advice:** Provide clear, constructive feedback. For example, instead of saying "the pants are bad," say "a slim-fit chino in a neutral color would create a more elongated silhouette for your height."
+    Your "suggestions" should include your thought process in a concise manner (about 6-7 lines). Explain WHY you are giving this rating. Consider the following:
+    1.  **Occasion Suitability:** Is the outfit appropriate for the specified occasion?
+    2.  **Color Coordination & Theory:** Do the colors of the items complement each other?
+    3.  **Fit & Proportions:** How will these items likely fit on someone with the user's height and body shape? Do they create a balanced silhouette?
+    4.  **Overall Cohesion & Style:** Does the outfit tell a coherent style story?
+    5.  **Actionable Advice:** Provide clear, constructive feedback. For example, instead of saying "the pants are bad," say "a slim-fit chino in a neutral color would create a more elongated silhouette for your height."
 
     Provide the output in the specified JSON format.`,
 });

@@ -8,9 +8,11 @@ import type { VirtualTryOnOutput } from '@/ai/flows/virtual-try-on';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Star, Sparkles, Shirt, Footprints, Watch, Upload, ThumbsUp, Wrench, Lightbulb } from 'lucide-react';
+import { Bot, Star, Sparkles, Shirt, Footprints, Watch, Upload, ThumbsUp, Wrench, Lightbulb, CalendarHeart } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type ClothingCategory = 'Tops' | 'Bottoms' | 'Footwear' | 'Accessories';
 type SelectedClothing = {
@@ -22,6 +24,7 @@ export function VirtualTryouts() {
     const [selectedClothing, setSelectedClothing] = useState<SelectedClothing>({});
     const [tryOnResult, setTryOnResult] = useState<VirtualTryOnOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [occasion, setOccasion] = useState('');
     const { toast } = useToast();
 
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>, category: ClothingCategory | 'Custom') => {
@@ -50,6 +53,10 @@ export function VirtualTryouts() {
             toast({ title: 'No Clothing Selected', description: 'Please upload at least one clothing item.', variant: 'destructive' });
             return;
         }
+        if (!occasion) {
+            toast({ title: 'No Occasion Specified', description: 'Please tell us where you are wearing this outfit.', variant: 'destructive' });
+            return;
+        }
 
         setIsLoading(true);
         setTryOnResult(null);
@@ -65,6 +72,7 @@ export function VirtualTryouts() {
             bodyScanDataUri: profile.bodyScan,
             clothingItems,
             userProfile: { age, height, weight, gender },
+            occasion,
         });
 
         if (result.success && result.data) {
@@ -126,6 +134,10 @@ export function VirtualTryouts() {
                         <Button variant="outline" asChild className="w-full">
                             <label className="cursor-pointer"><Upload className="mr-2"/> Upload Your Own <input type="file" className="sr-only" onChange={(e) => handleImageUpload(e, 'Custom')} /></label>
                         </Button>
+                        <div className="space-y-2">
+                            <Label htmlFor="occasion" className="flex items-center gap-2"><CalendarHeart className="w-4 h-4" /> What's the occasion?</Label>
+                            <Input id="occasion" value={occasion} onChange={(e) => setOccasion(e.target.value)} placeholder="e.g., Date Night, Casual Hangout" />
+                        </div>
                         <Button onClick={handleTryOn} disabled={isLoading} size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                             {isLoading ? (
                                 <><Bot className="mr-2 h-5 w-5 animate-spin" /> Analyzing...</>
@@ -153,7 +165,7 @@ export function VirtualTryouts() {
                                 <CardContent className="p-12">
                                     <Star className="w-12 h-12 mx-auto text-muted-foreground mb-4"/>
                                     <h3 className="font-semibold text-lg text-muted-foreground">Your analysis will appear here</h3>
-                                    <p className="text-sm text-muted-foreground">Select your items and click "Analyze My Outfit".</p>
+                                    <p className="text-sm text-muted-foreground">Select your items, specify an occasion, and click "Analyze My Outfit".</p>
                                 </CardContent>
                             </Card>
                         )}

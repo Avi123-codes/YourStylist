@@ -8,7 +8,7 @@ import type { SuggestHairstylesFromPhotoOutput } from '@/ai/flows/suggest-hairst
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, PartyPopper, Scissors, Star, Zap, User, MessageSquare } from 'lucide-react';
+import { Bot, PartyPopper, Scissors, Star, Zap, User, MessageSquare, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -137,7 +137,13 @@ export function HairstyleSuggestion() {
                                 <CardContent className="flex-grow flex flex-col gap-4">
                                     <div className="space-y-2">
                                         <StarRating rating={suggestion.trendiness} label="Trendiness" />
-                                        <StarRating rating={suggestion.maintenance} label="Maintenance" />
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-medium w-24">Maintenance</p>
+                                            <div className="flex items-center gap-2">
+                                                <Wrench className="w-5 h-5 text-muted-foreground" />
+                                                <p className="text-sm font-medium">{suggestion.maintenance}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                     <Tabs defaultValue="extrovert" className="w-full pt-4">
                                         <TabsList className="grid w-full grid-cols-2">

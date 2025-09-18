@@ -13,7 +13,7 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
   color: z
     .string()
     .describe('The preferred color of clothing (e.g. any, bright, dark, neutral).'),
-  price: z.string().describe('The user\'s preferred price range for items.'),
+  price: z.string().describe("The user's preferred price range for items."),
   bodyScanDataUri: z
     .string()
     .describe(
@@ -26,7 +26,7 @@ export type SuggestWardrobeFromPreferencesInput = z.infer<typeof SuggestWardrobe
 const ClothingItemSchema = z.object({
     itemName: z.string().describe("The name of the clothing item, e.g., 'Slim-Fit Linen Shirt'."),
     itemType: z.string().describe("The type of clothing, e.g., 'Shirt', 'Trousers'."),
-    url: z.string().url().describe("A fictional, but realistic-looking, URL to a web page where the user could buy this item."),
+    store: z.string().describe("The name of a popular online store or brand where the user could find this item, e.g., 'Zara', 'H&M', 'Nike'."),
     suitabilityScore: z.number().min(0).max(1).describe("A score from 0 to 1 indicating how well this item matches the user's preferences."),
 });
 
@@ -47,7 +47,7 @@ const suggestionPrompt = ai.definePrompt({
   For each item, you must provide:
   1.  A specific item name (e.g., "Vintage Wash Denim Jacket").
   2.  The general item type (e.g., "Jacket").
-  3.  A fictional but realistic HTTPS URL to a product page for the item. The URL should look plausible, for example: \`https://www.examplebrand.com/products/vintage-wash-denim-jacket-12345\`.
+  3.  A popular online store or brand where this type of item can be found (e.g., "Zara", "ASOS", "Nike").
   4.  A suitability score (0-1) indicating how well the item matches the user's preferences.
 
   User Preferences:
