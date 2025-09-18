@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const CreateOutfitFromClosetInputSchema = z.object({
+const CreateOutfitFromClosetInputSchema = z.object({
     clothingItems: z.array(z.object({
         imageDataUri: z.string().describe("An image of a clothing item from the user's closet."),
     })).describe("An array of all clothing items available in the user's closet."),
@@ -18,7 +18,7 @@ export const CreateOutfitFromClosetInputSchema = z.object({
 });
 export type CreateOutfitFromClosetInput = z.infer<typeof CreateOutfitFromClosetInputSchema>;
 
-export const CreateOutfitFromClosetOutputSchema = z.object({
+const CreateOutfitFromClosetOutputSchema = z.object({
     outfit: z.array(z.object({
         itemName: z.string().describe("The descriptive name of the clothing item chosen for the outfit, e.g., 'Blue Denim Jacket'."),
         category: z.string().describe("The category of the item, e.g., 'Top', 'Bottoms', 'Outerwear', 'Footwear', 'Accessory'."),
