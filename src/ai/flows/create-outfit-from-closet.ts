@@ -38,22 +38,16 @@ const prompt = ai.definePrompt({
     name: 'createOutfitFromClosetPrompt',
     input: { schema: CreateOutfitFromClosetInputSchema },
     output: { schema: CreateOutfitFromClosetOutputSchema },
-    prompt: `You are an expert personal stylist. Your task is to create a cohesive and stylish outfit from a collection of clothing items provided by the user for a specific occasion.
+    prompt: `You are a personal stylist. Create an outfit for the following occasion: {{{occasion}}}.
 
-    AVAILABLE CLOTHING ITEMS:
+    Select 2-4 items from the available clothing items below. For each item you select, you MUST return the original imageDataUri provided for it.
+    
+    Available Items:
     {{#each clothingItems}}
     - Item: {{media url=this.imageDataUri}}
     {{/each}}
     
-    OCCASION: {{{occasion}}}
-
-    INSTRUCTIONS:
-    1.  Analyze all the provided clothing items.
-    2.  Select 2-4 items that create a complete and appropriate outfit for the specified occasion.
-    3.  For each selected item, you MUST return the original imageDataUri that was provided for it.
-    4.  For each selected item, also provide a descriptive name (e.g., "Black Leather Loafers", "Striped Cotton T-Shirt") and its category.
-    5.  Provide a brief reasoning for your outfit selection. Explain why the items work well together for the given occasion.
-    6.  It is crucial that you only use the items provided in the images. Do not invent new items.
+    Provide a brief reasoning for your outfit selection.
     `,
 });
 

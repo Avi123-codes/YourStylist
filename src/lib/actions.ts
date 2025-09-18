@@ -62,6 +62,9 @@ export async function virtualTryOn(input: VirtualTryOnInput) {
 export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput) {
     try {
         const result = await createOutfitFromClosetFlow(input);
+        if (!result) {
+            return { success: false, error: 'The AI could not generate a suggestion. Please try again.' };
+        }
         return { success: true, data: result };
     } catch (error) {
         console.error(error);
