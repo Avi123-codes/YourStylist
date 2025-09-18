@@ -73,12 +73,6 @@ export function ClosetOrganizer() {
         setIsLoading(false);
     };
 
-    const findImageUri = (itemName: string) => {
-        // This is a simplified search. A real app might use AI to match the name to the image.
-        const foundItem = closetItems[suggestion?.outfit.findIndex(item => item.itemName === itemName) ?? -1];
-        return foundItem?.imageDataUri;
-    };
-
     return (
         <div className="space-y-8">
             <Card>
@@ -147,14 +141,12 @@ export function ClosetOrganizer() {
                             <AlertDescription>{suggestion.reasoning}</AlertDescription>
                         </Alert>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {suggestion.outfit.map(item => {
-                                const itemImageUri = findImageUri(item.itemName)
-                                return (
+                            {suggestion.outfit.map(item => (
                                 <Card key={item.itemName}>
                                     <CardContent className="p-0">
                                         <div className="relative aspect-square">
-                                            {itemImageUri ? (
-                                                <Image src={itemImageUri} alt={item.itemName} fill className="object-cover rounded-t-lg" />
+                                            {item.imageDataUri ? (
+                                                <Image src={item.imageDataUri} alt={item.itemName} fill className="object-cover rounded-t-lg" />
                                             ) : (
                                                 <div className="w-full h-full bg-muted rounded-t-lg flex items-center justify-center">
                                                     <Shirt className="w-10 h-10 text-muted-foreground"/>
@@ -167,7 +159,7 @@ export function ClosetOrganizer() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                            )})}
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
