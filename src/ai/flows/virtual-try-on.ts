@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const VirtualTryOnInputSchema = z.object({
+const VirtualTryOnInputSchema = z.object({
   bodyScanDataUri: z
     .string()
     .describe(
@@ -23,7 +23,7 @@ export const VirtualTryOnInputSchema = z.object({
 });
 export type VirtualTryOnInput = z.infer<typeof VirtualTryOnInputSchema>;
 
-export const VirtualTryOnOutputSchema = z.object({
+const VirtualTryOnOutputSchema = z.object({
   image: z.string().url().describe('The generated image of the user wearing the clothes, as a data URI.'),
   rating: z.number().describe('The rating of the outfit out of 10.'),
   suggestions: z.string().describe('Specific suggestions for improving the outfit.'),
@@ -46,7 +46,7 @@ const virtualTryOnFlow = ai.defineFlow(
     const { bodyScanDataUri, clothingItems } = input;
 
     // Generate the image
-    const promptParts = [
+    const promptParts: (string | {media: {url: string}} | {text: string})[] = [
         { media: { url: bodyScanDataUri } },
         { text: "Superimpose the following clothing items onto the person in the body scan. The person should look realistic and be wearing all the provided items. Only show the person wearing the clothes, with a clean studio background. The output should be just the final image."}
     ];
@@ -69,8 +69,9 @@ const virtualTryOnFlow = ai.defineFlow(
         throw new Error('Image generation failed.');
     }
 
-    // Rate the outfit
-    const { output: ratingOutput } = await ai.run('outfitRatingAndSuggestionsFlow', {
+    // Rate the outfit by calling the existing flow
+    const ratingFlow = await ai.getFlow('outfitRatingAndSuggestionsFlow');
+    const { output: ratingOutput } = await ratingFlow.invoke({
       photoDataUri: generatedImageUri,
     });
     
