@@ -4,6 +4,7 @@ import { rateOutfitAndSuggestImprovements, type OutfitRatingAndSuggestionsInput 
 import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
 import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
 import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
+import { virtualTryOn as virtualTryOnFlow, type VirtualTryOnInput } from '@/ai/flows/virtual-try-on';
 
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
@@ -44,5 +45,15 @@ export async function analyzeColors(input: AnalyzeColorsInput) {
     } catch (error) {
         console.error(error);
         return { success: false, error: 'Failed to analyze colors.' };
+    }
+}
+
+export async function virtualTryOn(input: VirtualTryOnInput) {
+    try {
+        const result = await virtualTryOnFlow(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error(error);
+        return { success: false, error: 'Failed to perform virtual try-on.' };
     }
 }

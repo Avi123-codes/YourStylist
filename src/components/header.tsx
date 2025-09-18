@@ -6,6 +6,7 @@ const pageTitles: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
     '/dashboard/hairstyle': 'AI Hairstyle Suggestion',
     '/dashboard/wardrobe': 'AI Wardrobe Suggestion',
+    '/dashboard/tryouts': 'Virtual Tryouts',
     '/dashboard/ootd': 'Outfit of The Day Rating',
     '/dashboard/profile': 'My Profile',
 };

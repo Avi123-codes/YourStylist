@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent } from 'react';
-import Image from 'next/image';
+import { useState } from 'react';
 import { useUserProfile } from '@/context/user-profile-context';
 import { getWardrobeSuggestions, analyzeColors } from '@/lib/actions';
 import type { SuggestWardrobeFromPreferencesOutput } from '@/ai/flows/suggest-wardrobe-from-preferences';
@@ -9,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, PartyPopper, Shirt, Palette, ExternalLink, ShoppingCart } from 'lucide-react';
+import { Bot, PartyPopper, Shirt, Palette, ExternalLink, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Image from 'next/image';
 
 type ColorAnalysisResult = {
     bestColors: string[];
@@ -89,6 +89,12 @@ export function WardrobeSuggestion() {
         }
         setIsAnalyzingColor(false);
     };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: 'Copied to clipboard!', description: text });
+    };
+
 
     if (!profile.bodyScan) {
         return (
@@ -236,10 +242,6 @@ export function WardrobeSuggestion() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {suggestions.suggestions.map((suggestion, index) => (
                             <Card key={index} className="flex flex-col overflow-hidden group">
-                                 <div className="relative w-full aspect-square bg-muted flex items-center justify-center text-center p-4">
-                                     <ShoppingCart className="w-12 h-12 text-muted-foreground" />
-                                </div>
-
                                 <div className="p-4 flex flex-col flex-grow">
                                     <h4 className="font-headline text-base flex-grow">{suggestion.itemName}</h4>
                                     <p className="text-sm text-muted-foreground">{suggestion.itemType}</p>
@@ -248,11 +250,12 @@ export function WardrobeSuggestion() {
                                         <p className="text-xs text-muted-foreground mt-1">Suitability: {Math.round(suggestion.suitabilityScore * 100)}%</p>
                                     </div>
                                 </div>
-                                <CardContent className="pt-0">
-                                    <Button asChild className="w-full">
-                                        <a href={suggestion.url} target="_blank" rel="noopener noreferrer">
-                                            Shop Now <ExternalLink className="ml-2 w-4 h-4" />
-                                        </a>
+                                <CardContent className="pt-0 space-y-2">
+                                     <a href={suggestion.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2 truncate">
+                                        <ExternalLink className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{suggestion.url}</span>
+                                     </a>
+                                    <Button variant="outline" size="sm" className="w-full" onClick={() => copyToClipboard(suggestion.url)}>
+                                        <Copy className="mr-2 w-4 h-4" /> Copy Link
                                     </Button>
                                 </CardContent>
                             </Card>
