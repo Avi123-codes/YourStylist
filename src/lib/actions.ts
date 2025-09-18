@@ -3,7 +3,7 @@
 import { rateOutfitAndSuggestImprovements, type OutfitRatingAndSuggestionsInput } from '@/ai/flows/outfit-rating-and-suggestions';
 import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
 import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
-import { analyzeColors, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
+import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
 
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
@@ -39,7 +39,7 @@ export async function getOotdRating(input: OutfitRatingAndSuggestionsInput) {
 
 export async function analyzeColors(input: AnalyzeColorsInput) {
     try {
-        const result = await analyzeColors(input);
+        const result = await analyzeColorsFlow(input);
         return { success: true, data: result };
     } catch (error) {
         console.error(error);
