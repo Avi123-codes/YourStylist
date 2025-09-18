@@ -35,7 +35,7 @@ const SuggestWardrobeFromPreferencesOutputSchema = z.object({
     .array(z.number())
     .describe('An array of suitability scores for each clothing item suggestion.'),
   images: z
-    .array(z.string())
+    .array(z.string().nullable())
     .describe('An array of data URIs for the generated images of each clothing item.'),
 });
 export type SuggestWardrobeFromPreferencesOutput = z.infer<typeof SuggestWardrobeFromPreferencesOutputSchema>;
@@ -102,8 +102,7 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
 
     return {
       ...suggestionsOutput,
-      // Provide a placeholder or empty string if image is null
-      images: images.map(img => img || ''), 
+      images,
     };
   }
 );

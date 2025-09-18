@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, PartyPopper, Shirt } from 'lucide-react';
+import { Bot, PartyPopper, Shirt, ImageOff } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -131,8 +131,15 @@ export function WardrobeSuggestion() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {suggestions.suggestions.map((suggestion, index) => (
                             <Card key={index} className="flex flex-col overflow-hidden">
-                                <div className="relative w-full aspect-[3/4] bg-muted">
-                                     <Image src={suggestions.images[index]} data-ai-hint="clothing item" alt={suggestion} fill objectFit="cover" />
+                                <div className="relative w-full aspect-[3/4] bg-muted flex items-center justify-center">
+                                     {suggestions.images[index] ? (
+                                        <Image src={suggestions.images[index]!} data-ai-hint="clothing item" alt={suggestion} fill objectFit="cover" />
+                                     ) : (
+                                        <div className="flex flex-col items-center text-muted-foreground text-center p-4">
+                                            <ImageOff className="w-8 h-8" />
+                                            <p className="text-xs mt-2">Image not available</p>
+                                        </div>
+                                     )}
                                 </div>
                                 <div className="p-4 flex flex-col flex-grow">
                                     <h4 className="font-headline text-base flex-grow">{suggestion}</h4>
