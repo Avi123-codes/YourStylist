@@ -5,10 +5,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export type GenerateHairstyleImageInput = {
-  photoDataUri: string;
-  hairstyle: string;
-};
 const GenerateHairstyleImageInputSchema = z.object({
   photoDataUri: z
     .string()
@@ -17,13 +13,12 @@ const GenerateHairstyleImageInputSchema = z.object({
     ),
   hairstyle: z.string().describe('The name of the hairstyle to apply.'),
 });
+export type GenerateHairstyleImageInput = z.infer<typeof GenerateHairstyleImageInputSchema>;
 
-export type GenerateHairstyleImageOutput = {
-  imageUrl: string;
-};
 const GenerateHairstyleImageOutputSchema = z.object({
   imageUrl: z.string().describe('The data URI of the generated image.'),
 });
+export type GenerateHairstyleImageOutput = z.infer<typeof GenerateHairstyleImageOutputSchema>;
 
 export async function generateHairstyleImage(
   input: GenerateHairstyleImageInput
@@ -43,7 +38,7 @@ const generateHairstyleImageFlow = ai.defineFlow(
       prompt: [
         {media: {url: photoDataUri}},
         {
-          text: `Apply a ${hairstyle} hairstyle to the person in the image. The output should be a realistic image of the person with the new hairstyle, keeping all of their facial features exactly the same. Only change the hair.`,
+          text: `Apply a ${hairstyle} hairstyle to the person in the image. The output should be a realistic image of the person with the new hairstyle. IMPORTANT: Keep all facial features, expression, and the background exactly the same. Only change the hair.`,
         },
       ],
       config: {

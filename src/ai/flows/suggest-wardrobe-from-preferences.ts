@@ -10,12 +10,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export type SuggestWardrobeFromPreferencesInput = {
-  style: string;
-  color: string;
-  bodyScanDataUri: string;
-  trendData?: string;
-};
 const SuggestWardrobeFromPreferencesInputSchema = z.object({
   style: z
     .string()
@@ -30,12 +24,9 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
     ),
   trendData: z.string().optional().describe('Trend data to incorporate into the suggestions.'),
 });
+export type SuggestWardrobeFromPreferencesInput = z.infer<typeof SuggestWardrobeFromPreferencesInputSchema>;
 
-export type SuggestWardrobeFromPreferencesOutput = {
-  suggestions: string[];
-  suitabilityScores: number[];
-  images: string[];
-};
+
 const SuggestWardrobeFromPreferencesOutputSchema = z.object({
   suggestions: z
     .array(z.string())
@@ -47,6 +38,8 @@ const SuggestWardrobeFromPreferencesOutputSchema = z.object({
     .array(z.string())
     .describe('An array of data URIs for the generated images of each clothing item.'),
 });
+export type SuggestWardrobeFromPreferencesOutput = z.infer<typeof SuggestWardrobeFromPreferencesOutputSchema>;
+
 
 const suggestionPrompt = ai.definePrompt({
   name: 'suggestWardrobeFromPreferencesPrompt',
@@ -93,18 +86,24 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
     }
 
     const imageGenerationPromises = suggestionsOutput.suggestions.map(async suggestion => {
-      const {media} = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `a realistic photo of a single ${suggestion}, on a plain white background, professional studio lighting`,
-      });
-      return media.url;
+      try {
+        const {media} = await ai.generate({
+          model: 'googleai/imagen-4.0-fast-generate-001',
+          prompt: `A single ${suggestion} on a clean, white background. Photorealistic, studio lighting.`,
+        });
+        return media.url;
+      } catch (error) {
+        console.error(`Failed to generate image for suggestion: ${suggestion}`, error);
+        return null; // Return null if an image fails to generate
+      }
     });
 
     const images = await Promise.all(imageGenerationPromises);
 
     return {
       ...suggestionsOutput,
-      images: images.filter((img): img is string => !!img),
+      // Provide a placeholder or empty string if image is null
+      images: images.map(img => img || ''), 
     };
   }
 );
