@@ -48,12 +48,6 @@ const SuggestWardrobeFromPreferencesOutputSchema = z.object({
     .describe('An array of data URIs for the generated images of each clothing item.'),
 });
 
-export async function suggestWardrobeFromPreferences(
-  input: SuggestWardrobeFromPreferencesInput
-): Promise<SuggestWardrobeFromPreferencesOutput> {
-  return suggestWardrobeFromPreferencesFlow(input);
-}
-
 const suggestionPrompt = ai.definePrompt({
   name: 'suggestWardrobeFromPreferencesPrompt',
   input: {schema: SuggestWardrobeFromPreferencesInputSchema},
@@ -79,6 +73,12 @@ const suggestionPrompt = ai.definePrompt({
   `,
 });
 
+export async function suggestWardrobeFromPreferences(
+  input: SuggestWardrobeFromPreferencesInput
+): Promise<SuggestWardrobeFromPreferencesOutput> {
+  return suggestWardrobeFromPreferencesFlow(input);
+}
+
 
 const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
   {
@@ -95,7 +95,7 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
     const imageGenerationPromises = suggestionsOutput.suggestions.map(async suggestion => {
       const {media} = await ai.generate({
         model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `a realistic photo of a single ${suggestion} on a white background, studio lighting`,
+        prompt: `a realistic photo of a single ${suggestion}, on a plain white background, professional studio lighting`,
       });
       return media.url;
     });

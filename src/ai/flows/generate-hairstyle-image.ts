@@ -43,7 +43,7 @@ const generateHairstyleImageFlow = ai.defineFlow(
       prompt: [
         {media: {url: photoDataUri}},
         {
-          text: `Apply a ${hairstyle} hairstyle to the person in the image. The output should be a realistic image of the person with the new hairstyle, keeping their facial features the same.`,
+          text: `Apply a ${hairstyle} hairstyle to the person in the image. The output should be a realistic image of the person with the new hairstyle, keeping all of their facial features exactly the same. Only change the hair.`,
         },
       ],
       config: {
