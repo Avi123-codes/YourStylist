@@ -29,6 +29,8 @@ const SuggestHairstylesFromPhotoOutputSchema = z.array(
       .describe(
         'A score indicating the suitability of the hairstyle for the user, ranging from 0 to 1.'
       ),
+    trendiness: z.number().min(1).max(5).describe('A 1-5 star rating for how trendy the hairstyle is.'),
+    maintenance: z.number().min(1).max(5).describe('A 1-5 star rating for how much maintenance the hairstyle requires (1 being low, 5 being high).'),
     description: z.object({
       introvert: z
         .string()
@@ -62,12 +64,14 @@ const prompt = ai.definePrompt({
   Based on the photo provided, suggest five hairstyles that would be most suitable for the user.
 
   For each hairstyle, provide:
-  1. An "introvert" description: a short, 5-6 word phrase someone could say to their barber to ask for the cut.
-  2. An "extrovert" description: a more descriptive 2-3 line phrase an extrovert could say to their barber, maybe including some friendly chatter.
+  1. The hairstyle name.
+  2. A suitability score (0-1).
+  3. A trendiness rating (1-5 stars).
+  4. A maintenance rating (1 for low, 5 for high).
+  5. An "introvert" description: a short, 5-6 word phrase someone could say to their barber to ask for the cut.
+  6. An "extrovert" description: a more descriptive 2-3 line phrase an extrovert could say to their barber, maybe including some friendly chatter.
 
   Rank the hairstyles by suitability, with the most suitable hairstyle listed first.
-
-  Provide a suitability score (0-1) for each hairstyle.
 
   Photo: {{media url=photoDataUri}}
   `,

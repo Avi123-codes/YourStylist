@@ -3,7 +3,8 @@
 import { rateOutfitAndSuggestImprovements, type OutfitRatingAndSuggestionsInput } from '@/ai/flows/outfit-rating-and-suggestions';
 import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
 import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
-import { generateHairstyleImage, type GenerateHairstyleImageInput } from '@/ai/flows/generate-hairstyle-image';
+import { analyzeColors, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
+
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
     try {
@@ -15,15 +16,6 @@ export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoI
     }
 }
 
-export async function generateHairstyle(input: GenerateHairstyleImageInput) {
-    try {
-        const result = await generateHairstyleImage(input);
-        return { success: true, data: result };
-    } catch (error) {
-        console.error(error);
-        return { success: false, error: 'Failed to generate hairstyle image.' };
-    }
-}
 
 export async function getWardrobeSuggestions(input: SuggestWardrobeFromPreferencesInput) {
     try {
@@ -42,5 +34,15 @@ export async function getOotdRating(input: OutfitRatingAndSuggestionsInput) {
     } catch (error) {
         console.error(error);
         return { success: false, error: 'Failed to rate outfit.' };
+    }
+}
+
+export async function analyzeColors(input: AnalyzeColorsInput) {
+    try {
+        const result = await analyzeColors(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error(error);
+        return { success: false, error: 'Failed to analyze colors.' };
     }
 }

@@ -1,10 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI agent that suggests clothing items based on user preferences, body scan data, and trend data.
- *
- * - suggestWardrobeFromPreferences - A function that suggests clothing items based on user preferences.
- * - SuggestWardrobeFromPreferencesInput - The input type for the suggestWardrobeFromPreferences function.
- * - SuggestWardrobeFromPreferencesOutput - The return type for the suggestWardrobeFromPreferences function.
+ * @fileOverview An AI agent that suggests clothing items based on user preferences.
  */
 
 import {ai} from '@/ai/genkit';
@@ -17,6 +13,7 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
   color: z
     .string()
     .describe('The preferred color of clothing (e.g. any, bright, dark, neutral).'),
+  price: z.string().describe('The user\'s preferred price range for items.'),
   bodyScanDataUri: z
     .string()
     .describe(
@@ -26,17 +23,17 @@ const SuggestWardrobeFromPreferencesInputSchema = z.object({
 });
 export type SuggestWardrobeFromPreferencesInput = z.infer<typeof SuggestWardrobeFromPreferencesInputSchema>;
 
+const ClothingItemSchema = z.object({
+    itemName: z.string().describe("The name of the clothing item, e.g., 'Slim-Fit Linen Shirt'."),
+    itemType: z.string().describe("The type of clothing, e.g., 'Shirt', 'Trousers'."),
+    url: z.string().url().describe("A fictional, but realistic-looking, URL to a web page where the user could buy this item."),
+    suitabilityScore: z.number().min(0).max(1).describe("A score from 0 to 1 indicating how well this item matches the user's preferences."),
+});
 
 const SuggestWardrobeFromPreferencesOutputSchema = z.object({
   suggestions: z
-    .array(z.string())
+    .array(ClothingItemSchema)
     .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
-  suitabilityScores: z
-    .array(z.number())
-    .describe('An array of suitability scores for each clothing item suggestion.'),
-  images: z
-    .array(z.string().nullable())
-    .describe('An array of data URIs for the generated images of each clothing item.'),
 });
 export type SuggestWardrobeFromPreferencesOutput = z.infer<typeof SuggestWardrobeFromPreferencesOutputSchema>;
 
@@ -44,25 +41,23 @@ export type SuggestWardrobeFromPreferencesOutput = z.infer<typeof SuggestWardrob
 const suggestionPrompt = ai.definePrompt({
   name: 'suggestWardrobeFromPreferencesPrompt',
   input: {schema: SuggestWardrobeFromPreferencesInputSchema},
-  output: {
-    schema: z.object({
-      suggestions: z
-        .array(z.string())
-        .describe('An array of 4 clothing item suggestions based on the provided preferences.'),
-      suitabilityScores: z
-        .array(z.number())
-        .describe('An array of suitability scores for each clothing item suggestion.'),
-    }),
-  },
-  prompt: `You are a personal stylist AI. You will suggest 4 clothing items based on the user's preferences, body scan data, and trend data.
+  output: {schema: SuggestWardrobeFromPreferencesOutputSchema},
+  prompt: `You are a personal stylist AI. You will suggest 4 clothing items based on the user's preferences, body scan, and current trends.
 
-  Preferences:
+  For each item, you must provide:
+  1.  A specific item name (e.g., "Vintage Wash Denim Jacket").
+  2.  The general item type (e.g., "Jacket").
+  3.  A fictional but realistic HTTPS URL to a product page for the item. The URL should look plausible, for example: \`https://www.examplebrand.com/products/vintage-wash-denim-jacket-12345\`.
+  4.  A suitability score (0-1) indicating how well the item matches the user's preferences.
+
+  User Preferences:
   Style: {{{style}}}
   Color: {{{color}}}
+  Price Range: {{{price}}}
   Body Scan: {{media url=bodyScanDataUri}}
   Trend Data: {{{trendData}}}
 
-  Suggest 4 clothing items incorporating trend data and suitability scores. Provide the output as a JSON object with "suggestions" and "suitabilityScores" fields.
+  Provide exactly 4 suggestions.
   `,
 });
 
@@ -80,29 +75,10 @@ const suggestWardrobeFromPreferencesFlow = ai.defineFlow(
     outputSchema: SuggestWardrobeFromPreferencesOutputSchema,
   },
   async input => {
-    const {output: suggestionsOutput} = await suggestionPrompt(input);
-    if (!suggestionsOutput) {
+    const {output} = await suggestionPrompt(input);
+    if (!output) {
       throw new Error('Could not generate wardrobe suggestions.');
     }
-
-    const imageGenerationPromises = suggestionsOutput.suggestions.map(async suggestion => {
-      try {
-        const {media} = await ai.generate({
-          model: 'googleai/imagen-4.0-fast-generate-001',
-          prompt: `A single ${suggestion} on a clean, white background. Photorealistic, studio lighting.`,
-        });
-        return media.url;
-      } catch (error) {
-        console.error(`Failed to generate image for suggestion: ${suggestion}`, error);
-        return null; // Return null if an image fails to generate
-      }
-    });
-
-    const images = await Promise.all(imageGenerationPromises);
-
-    return {
-      ...suggestionsOutput,
-      images,
-    };
+    return output;
   }
 );

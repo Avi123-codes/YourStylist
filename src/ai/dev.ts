@@ -4,4 +4,4 @@ config();
 import '@/ai/flows/outfit-rating-and-suggestions.ts';
 import '@/ai/flows/suggest-wardrobe-from-preferences.ts';
 import '@/ai/flows/suggest-hairstyles-from-photo.ts';
-import '@/ai/flows/generate-hairstyle-image.ts';
+import '@/ai/flows/analyze-colors.ts';
