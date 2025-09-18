@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview An AI agent that superimposes clothing items onto a user's body scan.
+ * @fileOverview An AI agent that rates and provides feedback on a user's chosen outfit.
  *
- * - virtualTryOn - A function that handles the virtual try-on process.
+ * - virtualTryOn - A function that handles the virtual try-on analysis.
  * - VirtualTryOnInput - The input type for the virtualTryOn function.
  * - VirtualTryOnOutput - The return type for the virtualTryOn function.
  */
@@ -14,19 +14,24 @@ const VirtualTryOnInputSchema = z.object({
   bodyScanDataUri: z
     .string()
     .describe(
-      "The user's body scan as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The user's body scan as a data URI. This is used to understand the user's body shape."
     ),
   clothingItems: z.array(z.object({
     category: z.string().describe("The category of the clothing item, e.g., 'Top', 'Bottoms'."),
     imageDataUri: z.string().describe("The image of the clothing item as a data URI."),
-  })).describe('An array of clothing items to try on.'),
+  })).describe('An array of clothing items to analyze.'),
+   userProfile: z.object({
+    height: z.string(),
+    weight: z.string(),
+    gender: z.string(),
+    age: z.string(),
+  }).describe("The user's profile information."),
 });
 export type VirtualTryOnInput = z.infer<typeof VirtualTryOnInputSchema>;
 
 const VirtualTryOnOutputSchema = z.object({
-  image: z.string().url().describe('The generated image of the user wearing the clothes, as a data URI.'),
   rating: z.number().describe('The rating of the outfit out of 10.'),
-  suggestions: z.string().describe('Specific suggestions for improving the outfit.'),
+  suggestions: z.string().describe('Specific, detailed suggestions and the reasoning for the rating, considering color theory, fit for the user\'s height, and overall coherence of the outfit.'),
 });
 export type VirtualTryOnOutput = z.infer<typeof VirtualTryOnOutputSchema>;
 
@@ -36,6 +41,39 @@ export async function virtualTryOn(
   return virtualTryOnFlow(input);
 }
 
+
+const prompt = ai.definePrompt({
+    name: 'virtualOutfitAnalysisPrompt',
+    input: {schema: VirtualTryOnInputSchema},
+    output: {schema: VirtualTryOnOutputSchema},
+    prompt: `You are an expert personal stylist. Your task is to analyze an outfit combination for a user and provide a rating out of 10, along with a detailed thought process for your suggestions.
+
+    USER PROFILE:
+    - Age: {{{userProfile.age}}}
+    - Height: {{{userProfile.height}}} cm
+    - Weight: {{{userProfile.weight}}} kg
+    - Gender: {{{userProfile.gender}}}
+    - Body Scan (for body shape reference): {{media url=bodyScanDataUri}}
+
+    CLOTHING ITEMS:
+    {{#each clothingItems}}
+    - Category: {{{this.category}}}
+      - Image: {{media url=this.imageDataUri}}
+    {{/each}}
+
+    ANALYSIS:
+    Based on all the information above, please provide a rating and detailed suggestions.
+
+    Your "suggestions" should include your thought process. Explain WHY you are giving this rating. Consider the following:
+    1.  **Color Coordination & Theory:** Do the colors of the items complement each other? Do they work well with the user's likely skin tone (based on a general analysis)?
+    2.  **Fit & Proportions:** How will these items likely fit on someone with the user's height and body shape? Do they create a balanced silhouette?
+    3.  **Overall Cohesion:** Does the outfit tell a coherent style story? Are the items appropriate to be worn together?
+    4.  **Actionable Advice:** Provide clear, constructive feedback. For example, instead of saying "the pants are bad," say "a slim-fit chino in a neutral color would create a more elongated silhouette for your height."
+
+    Provide the output in the specified JSON format.`,
+});
+
+
 const virtualTryOnFlow = ai.defineFlow(
   {
     name: 'virtualTryOnFlow',
@@ -43,46 +81,10 @@ const virtualTryOnFlow = ai.defineFlow(
     outputSchema: VirtualTryOnOutputSchema,
   },
   async (input) => {
-    const { bodyScanDataUri, clothingItems } = input;
-
-    // Generate the image
-    const promptParts: (string | {media: {url: string}} | {text: string})[] = [
-        { media: { url: bodyScanDataUri } },
-        { text: "Superimpose the following clothing items onto the person in the body scan. The person should look realistic and be wearing all the provided items. Only show the person wearing the clothes, with a clean studio background. The output should be just the final image."}
-    ];
-
-    for (const item of clothingItems) {
-        promptParts.push({ media: { url: item.imageDataUri } });
-        promptParts.push({ text: `This is a ${item.category}.` });
+    const {output} = await prompt(input);
+    if (!output) {
+      throw new Error('Failed to generate outfit analysis.');
     }
-
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
-      prompt: promptParts,
-      config: {
-        responseModalities: ['IMAGE', 'TEXT'],
-      },
-    });
-
-    const generatedImageUri = media.url;
-    if (!generatedImageUri) {
-        throw new Error('Image generation failed.');
-    }
-
-    // Rate the outfit by calling the existing flow
-    const ratingFlow = await ai.getFlow('outfitRatingAndSuggestionsFlow');
-    const { output: ratingOutput } = await ratingFlow.invoke({
-      photoDataUri: generatedImageUri,
-    });
-    
-    if (!ratingOutput) {
-      throw new Error('Failed to get outfit rating.');
-    }
-
-    return {
-      image: generatedImageUri,
-      rating: ratingOutput.rating,
-      suggestions: ratingOutput.suggestions,
-    };
+    return output;
   }
 );

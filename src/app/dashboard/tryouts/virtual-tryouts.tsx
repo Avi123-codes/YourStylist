@@ -8,7 +8,7 @@ import type { VirtualTryOnOutput } from '@/ai/flows/virtual-try-on';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Star, Sparkles, Shirt, Footprints, Watch, Upload, ThumbsUp, Wrench } from 'lucide-react';
+import { Bot, Star, Sparkles, Shirt, Footprints, Watch, Upload, ThumbsUp, Wrench, Lightbulb } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
@@ -32,7 +32,6 @@ export function VirtualTryouts() {
                 const imageDataUri = reader.result as string;
                 if (category === 'Custom') {
                     // For simplicity, we'll just add it to accessories for now.
-                    // A more complex implementation could ask the user for the category.
                     setSelectedClothing(prev => ({ ...prev, 'Accessories': imageDataUri }));
                 } else {
                     setSelectedClothing(prev => ({ ...prev, [category]: imageDataUri }));
@@ -48,7 +47,7 @@ export function VirtualTryouts() {
             return;
         }
         if (Object.keys(selectedClothing).length === 0) {
-            toast({ title: 'No Clothing Selected', description: 'Please select or upload at least one clothing item.', variant: 'destructive' });
+            toast({ title: 'No Clothing Selected', description: 'Please upload at least one clothing item.', variant: 'destructive' });
             return;
         }
 
@@ -59,10 +58,13 @@ export function VirtualTryouts() {
             category,
             imageDataUri: imageDataUri!
         }));
+        
+        const { age, height, weight, gender } = profile;
 
         const result = await virtualTryOn({
             bodyScanDataUri: profile.bodyScan,
             clothingItems,
+            userProfile: { age, height, weight, gender },
         });
 
         if (result.success && result.data) {
@@ -98,44 +100,11 @@ export function VirtualTryouts() {
         <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Virtual Tryouts</CardTitle>
-                    <CardDescription>Select clothing items to see how they look on you, then get an AI rating.</CardDescription>
+                    <CardTitle className="font-headline">Outfit Analysis</CardTitle>
+                    <CardDescription>Select clothing items to get a detailed AI analysis and rating for your outfit.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative w-full max-w-sm aspect-[9/16] rounded-lg border-2 border-dashed bg-muted flex items-center justify-center overflow-hidden">
-                            {isLoading ? (
-                                <div className="flex flex-col items-center text-muted-foreground">
-                                    <Bot className="w-12 h-12 animate-spin mb-4" />
-                                    <p>Generating your look...</p>
-                                </div>
-                            ) : tryOnResult ? (
-                                <Image src={tryOnResult.image} alt="Virtual try-on result" fill objectFit="cover" />
-                            ) : (
-                                <Image src={profile.bodyScan} alt="Your body scan" fill objectFit="cover" />
-                            )}
-                        </div>
-                         {tryOnResult && !isLoading && (
-                            <Card className="w-full max-w-sm shadow-lg">
-                                <CardHeader className="flex flex-row justify-between items-start">
-                                    <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                                        <ThumbsUp className="w-7 h-7 text-primary" />
-                                        Your Rating: {tryOnResult.rating}/10
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-start gap-3">
-                                        <Wrench className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
-                                        <div>
-                                            <h4 className="font-semibold text-lg">Improvement Suggestions</h4>
-                                            <p className="text-muted-foreground">{tryOnResult.suggestions}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                    <div className="space-y-6">
+                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             {clothingCategories.map(({ name, icon: Icon }) => (
                                 <div key={name} className="relative aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/50 hover:border-primary transition-colors">
@@ -159,11 +128,54 @@ export function VirtualTryouts() {
                         </Button>
                         <Button onClick={handleTryOn} disabled={isLoading} size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                             {isLoading ? (
-                                <><Bot className="mr-2 h-5 w-5 animate-spin" /> Rating...</>
+                                <><Bot className="mr-2 h-5 w-5 animate-spin" /> Analyzing...</>
                             ) : (
-                                <><Sparkles className="mr-2 h-5 w-5" /> Try On & Rate Outfit</>
+                                <><Lightbulb className="mr-2 h-5 w-5" /> Analyze My Outfit</>
                             )}
                         </Button>
+                    </div>
+                    <div className="flex flex-col items-center gap-4">
+                         {isLoading && (
+                            <Card className="w-full">
+                                <CardHeader>
+                                    <Skeleton className="h-8 w-1/2 rounded" />
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <Skeleton className="h-6 w-1/3 rounded" />
+                                    <Skeleton className="h-4 w-full rounded" />
+                                    <Skeleton className="h-4 w-full rounded" />
+                                    <Skeleton className="h-4 w-5/6 rounded" />
+                                </CardContent>
+                            </Card>
+                        )}
+                        {!isLoading && !tryOnResult && (
+                            <Card className="w-full text-center border-dashed">
+                                <CardContent className="p-12">
+                                    <Star className="w-12 h-12 mx-auto text-muted-foreground mb-4"/>
+                                    <h3 className="font-semibold text-lg text-muted-foreground">Your analysis will appear here</h3>
+                                    <p className="text-sm text-muted-foreground">Select your items and click "Analyze My Outfit".</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                         {tryOnResult && !isLoading && (
+                            <Card className="w-full max-w-sm shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                                        <ThumbsUp className="w-7 h-7 text-primary" />
+                                        Your Rating: {tryOnResult.rating}/10
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-start gap-3">
+                                        <Wrench className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
+                                        <div>
+                                            <h4 className="font-semibold text-lg">Stylist's Notes</h4>
+                                            <p className="text-muted-foreground whitespace-pre-wrap">{tryOnResult.suggestions}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 </CardContent>
             </Card>
