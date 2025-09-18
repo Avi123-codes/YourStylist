@@ -9,7 +9,7 @@ const pageTitles: { [key: string]: string } = {
     '/dashboard/tryouts': 'Virtual Tryouts',
     '/dashboard/ootd': 'Outfit of The Day Rating',
     '/dashboard/profile': 'My Profile',
-    '/dashboard/what-to-wear': 'What to Wear?',
+    '/dashboard/closet': 'Digital Closet',
 };
 
 

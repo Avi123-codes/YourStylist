@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Scissors, Shirt, Star, User, CloudSun, Sparkles } from 'lucide-react';
+import { ArrowRight, Scissors, Shirt, Star, User, Sparkles, GalleryHorizontal } from 'lucide-react';
 import { useUserProfile } from '@/context/user-profile-context';
 import Image from 'next/image';
 
@@ -26,16 +26,16 @@ const features = [
     icon: Star,
   },
    {
-    title: 'What to Wear?',
-    description: 'Get an outfit suggestion based on the weather in your city.',
-    link: '/dashboard/what-to-wear',
-    icon: CloudSun,
-  },
-    {
     title: 'Virtual Tryouts',
     description: 'Select clothing items to get a detailed AI analysis and rating for your outfit.',
     link: '/dashboard/tryouts',
     icon: Sparkles,
+  },
+   {
+    title: 'Digital Closet',
+    description: 'Organize your wardrobe and get AI-powered outfit suggestions from your own clothes.',
+    link: '/dashboard/closet',
+    icon: GalleryHorizontal,
   },
   {
     title: 'Your Profile',
