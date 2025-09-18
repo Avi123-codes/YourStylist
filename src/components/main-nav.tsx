@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Scissors, Shirt, Star, User, Bot, Sparkles } from 'lucide-react';
+import { Home, Scissors, Shirt, Star, User, Bot, Sparkles, CloudSun } from 'lucide-react';
 
 import {
   SidebarContent,
@@ -26,6 +26,7 @@ export function MainNav() {
     { href: '/dashboard/wardrobe', label: 'Wardrobe', icon: Shirt },
     { href: '/dashboard/tryouts', label: 'Tryouts', icon: Sparkles },
     { href: '/dashboard/ootd', label: 'OOTD Rating', icon: Star },
+    { href: '/dashboard/what-to-wear', label: 'What to Wear', icon: CloudSun },
   ];
 
   return (

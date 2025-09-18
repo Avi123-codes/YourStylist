@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Scissors, Shirt, Star, User } from 'lucide-react';
+import { ArrowRight, Scissors, Shirt, Star, User, CloudSun, Sparkles } from 'lucide-react';
 import { useUserProfile } from '@/context/user-profile-context';
 import Image from 'next/image';
 
@@ -24,6 +24,18 @@ const features = [
     description: 'Get instant feedback on your outfit of the day and tips for improvement.',
     link: '/dashboard/ootd',
     icon: Star,
+  },
+   {
+    title: 'What to Wear?',
+    description: 'Get an outfit suggestion based on the weather in your city.',
+    link: '/dashboard/what-to-wear',
+    icon: CloudSun,
+  },
+    {
+    title: 'Virtual Tryouts',
+    description: 'Select clothing items to get a detailed AI analysis and rating for your outfit.',
+    link: '/dashboard/tryouts',
+    icon: Sparkles,
   },
   {
     title: 'Your Profile',
