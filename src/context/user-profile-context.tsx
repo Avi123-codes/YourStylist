@@ -29,11 +29,11 @@ const UserProfileContext = createContext<UserProfileContextType | undefined>(und
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'Alex Doe',
-    age: '30',
-    height: '180',
-    weight: '75',
-    gender: 'male',
+    name: '',
+    age: '',
+    height: '',
+    weight: '',
+    gender: '',
     faceScan: null,
     bodyScan: null,
     closetItems: [],
