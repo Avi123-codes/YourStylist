@@ -151,14 +151,18 @@ export function ClosetOrganizer() {
                         <Card>
                            <CardContent className="p-4">
                                 <h4 className="font-semibold mb-4">Suggested Items:</h4>
-                                <ul className="list-disc list-inside space-y-2">
-                                    {suggestion.outfit?.map((item, index) => (
-                                        <li key={index}>
-                                            <span className="font-semibold">{item.itemName}</span>
-                                            <span className="text-muted-foreground"> ({item.category})</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                {suggestion.outfit && suggestion.outfit.length > 0 ? (
+                                    <ul className="list-disc list-inside space-y-2">
+                                        {suggestion.outfit.map((item, index) => (
+                                            <li key={index}>
+                                                <span className="font-semibold">{item.itemName}</span>
+                                                <span className="text-muted-foreground"> ({item.category})</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-muted-foreground">No items were suggested for this outfit.</p>
+                                )}
                             </CardContent>
                         </Card>
                     </CardContent>

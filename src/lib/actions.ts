@@ -68,8 +68,8 @@ export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput)
             return { success: true, data: result };
         }
 
-        // Case 2: AI gracefully determines no outfit can be made (returns null, or outfit is empty).
-        // Construct a user-friendly error message. The fallback message is crucial to prevent crashes.
+        // Case 2: AI gracefully determines no outfit can be made.
+        // We use the AI's reasoning for the error message, with a fallback.
         const errorMessage = result?.reasoning || 'The AI stylist could not create an outfit. Please try a different occasion or add more items.';
         return { success: false, error: errorMessage };
 
