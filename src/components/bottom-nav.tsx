@@ -12,6 +12,9 @@ export function BottomNavBar() {
   const pathname = usePathname();
   const { profile } = useUserProfile();
 
+  // The profile page is an alias for the onboarding page.
+  const profileLink = '/onboarding';
+
   const menuItems = [
     { href: '/dashboard', label: 'Home', icon: Home },
     { href: '/dashboard/hairstyle', label: 'Hairstyle', icon: Scissors },
@@ -19,14 +22,18 @@ export function BottomNavBar() {
     { href: '/dashboard/tryouts', label: 'Tryouts', icon: Sparkles },
     { href: '/dashboard/ootd', label: 'OOTD', icon: Star },
     { href: '/dashboard/closet', label: 'Closet', icon: GalleryHorizontal },
-    { href: '/dashboard/profile', label: 'Profile', icon: User, isProfile: true },
+    { href: profileLink, label: 'Profile', icon: User, isProfile: true },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 w-full border-t bg-card/80 backdrop-blur-sm">
       <div className="flex justify-around items-center h-16">
         {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            // Special check for profile link to match both /onboarding and /dashboard/profile
+            const isActive = item.isProfile 
+              ? (pathname === profileLink || pathname === '/dashboard/profile')
+              : pathname === item.href;
+            
             return (
                  <Link href={item.href} key={item.href} className={cn(
                      "flex flex-col items-center justify-center text-xs font-medium gap-1",
