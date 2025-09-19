@@ -1,5 +1,4 @@
 'use client';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 
 const pageTitles: { [key: string]: string } = {
@@ -18,9 +17,8 @@ export function Header() {
     const title = pageTitles[pathname] || 'YourStylist';
 
     return (
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-            <SidebarTrigger className="md:hidden" />
-            <h1 className="font-headline text-2xl font-semibold tracking-wide">{title}</h1>
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+            <h1 className="font-headline text-xl font-semibold tracking-wide text-center">{title}</h1>
         </header>
     );
 }
