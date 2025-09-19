@@ -1,51 +1,56 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LandingPage() {
   return (
-    <div className="relative flex flex-col min-h-screen bg-background">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('https://picsum.photos/seed/stylist-hero/1200/1600')",
-        }}
-        data-ai-hint="stylish woman"
-      >
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+    <div className="flex flex-col md:flex-row min-h-screen bg-background">
+      {/* Left side - Content */}
+      <div className="w-full md:w-1/2 flex flex-col justify-between p-8">
+        <h1 className="font-headline text-3xl font-bold tracking-wide text-foreground">YourStylist</h1>
+        
+        <main className="flex-1 flex flex-col items-center justify-center text-center -mt-20">
+          <div className="max-w-md space-y-6">
+            <h2 className="font-headline text-5xl font-bold tracking-tighter text-foreground sm:text-6xl">
+              Discover Your Style
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              AI-powered recommendations for hair, clothes, and more, tailored just for you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg">
+                <Link href="/auth/signup">
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/auth/signin">
+                  Sign In
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </main>
+        
+        <footer className="text-center text-muted-foreground text-sm">
+          <p>&copy; {new Date().getFullYear()} YourStylist. All rights reserved.</p>
+        </footer>
       </div>
-      
-      {/* Header */}
-      <header className="relative z-10 flex h-20 items-center justify-between px-4 sm:px-6">
-        <h1 className="font-headline text-3xl font-bold tracking-wide text-white">YourStylist</h1>
-        <Button asChild variant="ghost" className="text-white hover:bg-white/10">
-            <Link href="/auth/signin">
-                Sign In
-            </Link>
-        </Button>
-      </header>
-      
-      {/* Content */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center text-center text-white px-4">
-        <div className="max-w-2xl space-y-6">
-          <h2 className="font-headline text-5xl font-bold tracking-tighter sm:text-6xl md:text-7xl">
-            Welcome to Your Stylist
-          </h2>
-          <p className="text-lg text-white/90 md:text-xl">
-            Discover your perfect look with AI-powered style recommendations for hair, clothes, and more.
-          </p>
-          <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Link href="/auth/signup">
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-        </div>
-      </main>
 
-      {/* Footer can be added here if needed */}
+      {/* Right side - Image */}
+      <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+        <Image
+          src="https://picsum.photos/seed/fashion-aesthetic/1000/1500"
+          alt="A stylish person"
+          layout="fill"
+          objectFit="cover"
+          className="grayscale"
+          data-ai-hint="fashion model"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent md:bg-gradient-to-r md:from-background md:via-transparent md:to-transparent" />
+      </div>
     </div>
   );
 }
