@@ -26,8 +26,8 @@ const CreateOutfitFromClosetOutputSchema = z.object({
         itemName: z.string().describe("The descriptive name of the clothing item chosen for the outfit, e.g., 'Blue Denim Jacket'."),
         category: z.string().describe("The category of the item, e.g., 'Top', 'Bottoms', 'Outerwear', 'Footwear', 'Accessory'."),
         imageDataUri: z.string().describe("The original data URI of the selected clothing item image."),
-    })).optional().describe("An array of 2-4 clothing items that form a cohesive outfit. This can be empty if no suitable outfit is found."),
-    reasoning: z.string().describe("A brief explanation for why this outfit was chosen, considering the occasion and how the items complement each other."),
+    })).optional().describe("An array of 2-4 clothing items that form a cohesive outfit. This can be null or empty if no suitable outfit is found."),
+    reasoning: z.string().describe("A brief explanation for why this outfit was chosen, or why no outfit could be created."),
 });
 export type CreateOutfitFromClosetOutput = z.infer<typeof CreateOutfitFromClosetOutputSchema>;
 
@@ -54,7 +54,7 @@ const prompt = ai.definePrompt({
     3.  For EACH selected item, you MUST return the original 'imageDataUri' that was provided with the image.
     4.  Also return a descriptive 'itemName' and 'category' for each item.
     5.  Provide a 'reasoning' for your outfit choice.
-    6.  If you cannot create a suitable outfit from the items, return an empty 'outfit' array and explain why in the 'reasoning' field.
+    6.  If you cannot create a suitable outfit from the items, you MUST return a null value for the 'outfit' field and explain why in the 'reasoning' field.
     `,
 });
 

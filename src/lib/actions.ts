@@ -62,14 +62,19 @@ export async function virtualTryOn(input: VirtualTryOnInput) {
 export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput; error?: string }> {
     try {
         const result = await createOutfitFromClosetFlow(input);
-        
-        if (!result || !result.outfit || result.outfit.length === 0) {
-            const errorMessage = result?.reasoning || 'The AI stylist could not create an outfit. Please try a different occasion or add more items.';
-            return { success: false, error: errorMessage };
+
+        // Case 1: AI returns a valid outfit.
+        if (result && result.outfit && result.outfit.length > 0) {
+            return { success: true, data: result };
         }
-        
-        return { success: true, data: result };
+
+        // Case 2: AI gracefully determines no outfit can be made.
+        // It returns a response object but the 'outfit' array is empty or null.
+        const errorMessage = result?.reasoning || 'The AI stylist could not create an outfit. Please try a different occasion or add more items.';
+        return { success: false, error: errorMessage };
+
     } catch (error) {
+        // Case 3: A catastrophic error occurred during the AI flow execution.
         console.error('Error in createOutfitFromCloset action:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while creating the outfit.';
         return { success: false, error: errorMessage };
