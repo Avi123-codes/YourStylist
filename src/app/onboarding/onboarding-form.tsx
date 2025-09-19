@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera, Trash2, ArrowRight } from "lucide-react";
 import { ChangeEvent, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -28,9 +29,10 @@ const profileSchema = z.object({
   gender: z.string(),
 });
 
-export function ProfileForm() {
+export function OnboardingForm() {
   const { profile, setProfile } = useUserProfile();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -49,6 +51,7 @@ export function ProfileForm() {
       title: "Profile Updated",
       description: "Your personal details have been saved.",
     });
+    router.push('/dashboard');
   }
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>, type: 'faceScan' | 'bodyScan') => {
@@ -95,11 +98,11 @@ export function ProfileForm() {
               />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => inputRef.current?.click()}>
+            <Button variant="outline" type="button" onClick={() => inputRef.current?.click()}>
               {imageSrc ? 'Change Scan' : 'Upload Scan'}
             </Button>
             {imageSrc && (
-              <Button variant="destructive" size="icon" onClick={() => setProfile(p => ({...p, [type]: null}))}>
+              <Button variant="destructive" size="icon" type="button" onClick={() => setProfile(p => ({...p, [type]: null}))}>
                 <Trash2 className="w-4 h-4" />
                 <span className="sr-only">Remove {title}</span>
               </Button>
@@ -111,70 +114,75 @@ export function ProfileForm() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="font-headline">Personal Details</CardTitle>
-          <CardDescription>Update your information to get personalized results.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="age" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 30" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="gender" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <FormControl><Input placeholder="e.g., male" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField control={form.control} name="height" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (cm)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 180" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="weight" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 75" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <Button type="submit">Save Changes</Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="font-headline">Personal Details</CardTitle>
+              <CardDescription>Update your information to get personalized results.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="age" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl><Input type="number" placeholder="e.g., 30" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="gender" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gender</FormLabel>
+                      <FormControl><Input placeholder="e.g., male" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <FormField control={form.control} name="height" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Height (cm)</FormLabel>
+                      <FormControl><Input type="number" placeholder="e.g., 180" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="weight" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weight (kg)</FormLabel>
+                      <FormControl><Input type="number" placeholder="e.g., 75" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+            </CardContent>
+          </Card>
 
-      <div className="space-y-8">
-        <ImageUploader type="faceScan" />
-        <ImageUploader type="bodyScan" />
-      </div>
-    </div>
+          <div className="space-y-8">
+            <ImageUploader type="faceScan" />
+            <ImageUploader type="bodyScan" />
+          </div>
+        </div>
+        <div className="flex justify-end">
+            <Button type="submit" size="lg">
+                Continue to Dashboard
+                <ArrowRight className="ml-2"/>
+            </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

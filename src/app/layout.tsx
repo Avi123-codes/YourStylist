@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
+import { UserProfileProvider } from '@/context/user-profile-context';
 
 export const metadata: Metadata = {
   title: 'YourStylist',
@@ -20,7 +21,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <UserProfileProvider>
+          {children}
+        </UserProfileProvider>
         <Toaster />
       </body>
     </html>
