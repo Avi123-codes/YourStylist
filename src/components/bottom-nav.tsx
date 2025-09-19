@@ -23,7 +23,7 @@ export function BottomNavBar() {
   ];
 
   return (
-    <nav className="w-full border-t bg-card/80 backdrop-blur-sm">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full border-t bg-card/80 backdrop-blur-sm">
       <div className="flex justify-around items-center h-16">
         {menuItems.map((item) => {
             const isActive = pathname === item.href;
