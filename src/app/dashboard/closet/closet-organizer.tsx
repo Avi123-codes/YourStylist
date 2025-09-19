@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect } from 'react';
+import { useState, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,35 +13,23 @@ import { getItemDescription } from '@/lib/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { useUserProfile, type ClothingItem as ProfileClothingItem } from '@/context/user-profile-context';
+import { useUserProfile, type ClothingItem } from '@/context/user-profile-context';
 
-
-// We add a transient `isDescribing` property for UI state
-interface ClothingItem extends ProfileClothingItem {
-    isDescribing: boolean;
-}
 
 interface SuggestedOutfit {
-    items: ProfileClothingItem[];
+    items: ClothingItem[];
     reasoning: string;
 }
 
 export function ClosetOrganizer() {
-    // Local state for UI purposes only
-    const [localItems, setLocalItems] = useState<ClothingItem[]>([]);
     const [occasion, setOccasion] = useState('');
     const [isCreatingOutfit, setIsCreatingOutfit] = useState(false);
     const [suggestion, setSuggestion] = useState<SuggestedOutfit | null>(null);
+    const [describingItems, setDescribingItems] = useState<Set<string>>(new Set());
     
-    // Global state from context for persistence
     const { profile, setProfile } = useUserProfile();
+    const { closetItems } = profile;
     const { toast } = useToast();
-
-    // Sync global state from context to local UI state on mount
-    useEffect(() => {
-        setLocalItems(profile.closetItems.map(item => ({ ...item, isDescribing: false })));
-    }, [profile.closetItems]);
-
 
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -50,20 +38,22 @@ export function ClosetOrganizer() {
                 const id = `item-${Date.now()}-${Math.random()}`;
                 const reader = new FileReader();
 
-                // Add to local state immediately for UI feedback
-                const newItem: ClothingItem = {
-                    id,
-                    imageDataUri: '',
-                    description: null,
-                    isDescribing: true,
-                };
-                setLocalItems(prev => [...prev, newItem]);
+                setDescribingItems(prev => new Set(prev).add(id));
 
                 reader.onloadend = () => {
                     const imageDataUri = reader.result as string;
-
-                    // Update local item with image data
-                    setLocalItems(prev => prev.map(item => item.id === id ? { ...item, imageDataUri } : item));
+                    
+                    const newItem: ClothingItem = {
+                        id,
+                        imageDataUri,
+                        description: null,
+                    };
+                    
+                    // Add to context immediately for UI feedback, but without a description
+                    setProfile({
+                        ...profile,
+                        closetItems: [...closetItems, newItem]
+                    });
                     
                     // Call AI for description
                     describeItem(id, imageDataUri);
@@ -84,33 +74,31 @@ export function ClosetOrganizer() {
             toast({ title: 'Description Failed', description: 'Could not get description for an item.', variant: 'destructive' });
         }
         
-        // Update local state to stop loading indicator
-        setLocalItems(prev => prev.map(item =>
-            item.id === id ? { ...item, description: finalDescription, isDescribing: false } : item
-        ));
-        
-        // **Update global state (context) to persist the new item**
-        setProfile(prevProfile => ({
-            ...prevProfile,
-            closetItems: [
-                ...prevProfile.closetItems,
-                { id, imageDataUri, description: finalDescription }
-            ]
-        }));
+        // Update the specific item in the context with its new description
+        setProfile({
+            ...profile,
+            closetItems: profile.closetItems.map(item => 
+                item.id === id ? { ...item, description: finalDescription } : item
+            )
+        });
+
+        // Remove from describing set
+        setDescribingItems(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(id);
+            return newSet;
+        });
     };
 
     const removeItem = (id: string) => {
-        // Remove from local state
-        setLocalItems(prev => prev.filter(item => item.id !== id));
-        // Remove from global state
-        setProfile(prevProfile => ({
-            ...prevProfile,
-            closetItems: prevProfile.closetItems.filter(item => item.id !== id)
-        }));
+        setProfile({
+            ...profile,
+            closetItems: profile.closetItems.filter(item => item.id !== id)
+        });
     };
 
     const handleCreateOutfit = async () => {
-        const describableItems = localItems.filter(item => item.description && !item.isDescribing);
+        const describableItems = closetItems.filter(item => item.description);
         if (describableItems.length < 2) {
             toast({ title: 'Not enough items', description: 'Please add and describe at least two items.', variant: 'destructive' });
             return;
@@ -129,8 +117,8 @@ export function ClosetOrganizer() {
 
         if (result.success && result.data) {
             const suggestedItems = result.data.outfit?.map(chosenItem => {
-                return localItems.find(item => item.id === chosenItem.id);
-            }).filter((item): item is ProfileClothingItem => !!item) || [];
+                return closetItems.find(item => item.id === chosenItem.id);
+            }).filter((item): item is ClothingItem => !!item) || [];
             
             setSuggestion({
                 items: suggestedItems,
@@ -142,22 +130,22 @@ export function ClosetOrganizer() {
         setIsCreatingOutfit(false);
     };
 
-    const allItemsDescribed = localItems.every(item => !item.isDescribing);
+    const allItemsDescribed = describingItems.size === 0;
 
     return (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><GalleryHorizontal /> Your Digital Closet</CardTitle>
-                    <CardDescription>Upload photos of your clothes. The items will be saved to your profile and persist when you navigate away.</CardDescription>
+                    <CardDescription>Upload photos of your clothes. The items will be saved to your profile.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                        {localItems.map(item => (
+                        {closetItems.map(item => (
                             <div key={item.id} className="relative group aspect-square">
-                                {(item.isDescribing && !item.imageDataUri) && <Skeleton className="absolute inset-0" />}
+                                {describingItems.has(item.id) && !item.imageDataUri && <Skeleton className="absolute inset-0" />}
                                 {item.imageDataUri && <Image src={item.imageDataUri} alt={item.description || "Closet item"} fill className="object-cover rounded-md border" />}
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1 text-xs text-center truncate">{item.isDescribing ? 'Analyzing...' : item.description}</div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1 text-xs text-center truncate">{describingItems.has(item.id) ? 'Analyzing...' : item.description}</div>
                                 <Button
                                     variant="destructive"
                                     size="icon"
@@ -194,7 +182,7 @@ export function ClosetOrganizer() {
                             placeholder="e.g., Work meeting, casual brunch..."
                         />
                     </div>
-                    <Button onClick={handleCreateOutfit} disabled={isCreatingOutfit || !allItemsDescribed || localItems.length < 2}>
+                    <Button onClick={handleCreateOutfit} disabled={isCreatingOutfit || !allItemsDescribed || closetItems.length < 2}>
                         {isCreatingOutfit ? <><Bot className="mr-2 animate-spin"/>Styling... </>: <><Lightbulb className="mr-2"/>Create Outfit</>}
                     </Button>
                 </CardContent>

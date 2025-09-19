@@ -1,15 +1,17 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, getUserProfile, updateUserProfile } from '@/lib/firebase';
+import { usePathname, useRouter } from 'next/navigation';
 
-// Define the type for a single clothing item
 export type ClothingItem = {
   id: string;
   imageDataUri: string;
   description: string | null;
 };
 
-type UserProfile = {
+export type UserProfile = {
   name: string;
   age: string;
   height: string;
@@ -22,13 +24,14 @@ type UserProfile = {
 
 type UserProfileContextType = {
   profile: UserProfile;
-  setProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
+  setProfile: (profile: UserProfile) => void;
+  user: User | null;
+  loading: boolean;
 };
 
 const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
 
-export function UserProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<UserProfile>({
+const initialProfile: UserProfile = {
     name: '',
     age: '',
     height: '',
@@ -37,11 +40,66 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     faceScan: null,
     bodyScan: null,
     closetItems: [],
-  });
+};
+
+export function UserProfileProvider({ children }: { children: ReactNode }) {
+  const [profile, setProfileState] = useState<UserProfile>(initialProfile);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        const userProfile = await getUserProfile(user.uid);
+        if (userProfile) {
+          setProfileState(userProfile);
+          // Redirect from auth pages if logged in
+          if(pathname.startsWith('/auth')) {
+            router.push('/dashboard');
+          }
+        } else {
+           // New user, profile will be created on signup/onboarding
+           if(pathname !== '/onboarding' && !pathname.startsWith('/auth')) {
+             router.push('/onboarding');
+           }
+        }
+      } else {
+        setUser(null);
+        setProfileState(initialProfile);
+         // If not logged in, redirect to signin unless they are on public pages
+        if (pathname.startsWith('/dashboard') || pathname === '/onboarding') {
+            router.push('/auth/signin');
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router, pathname]);
+  
+  const handleSetProfile = async (newProfile: UserProfile) => {
+      setProfileState(newProfile);
+      if (user) {
+          try {
+              await updateUserProfile(user.uid, newProfile);
+          } catch (error) {
+              console.error("Failed to update profile in Firestore:", error);
+          }
+      }
+  }
+
 
   return (
-    <UserProfileContext.Provider value={{ profile, setProfile }}>
-      {children}
+    <UserProfileContext.Provider value={{ profile, setProfile: handleSetProfile, user, loading }}>
+        {loading ? (
+            <div className="flex h-screen items-center justify-center">
+                <p>Loading...</p>
+            </div>
+        ) : (
+            children
+        )}
     </UserProfileContext.Provider>
   );
 }

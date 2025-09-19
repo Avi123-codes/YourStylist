@@ -19,44 +19,85 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Camera, Trash2, ArrowRight } from "lucide-react";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   age: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid age." }),
-  gender: z.string(),
-  // Metric fields (will be populated by conversion)
+  gender: z.string().min(1, "Gender is required."),
+  // Metric fields
   heightCm: z.string().optional(),
   weightKg: z.string().optional(),
   // Imperial fields
   heightFt: z.string().optional(),
   heightIn: z.string().optional(),
   weightLbs: z.string().optional(),
+  // Scans
+  faceScan: z.string().nullable().optional(),
+  bodyScan: z.string().nullable().optional(),
 });
 
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
 export function OnboardingForm() {
-  const { profile, setProfile } = useUserProfile();
+  const { profile, setProfile, user } = useUserProfile();
   const { toast } = useToast();
   const router = useRouter();
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
 
-  const form = useForm<z.infer<typeof profileSchema>>({
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: profile.name,
-      age: profile.age,
-      gender: profile.gender,
-      heightCm: profile.height,
-      weightKg: profile.weight,
+      name: profile.name || '',
+      age: profile.age || '',
+      gender: profile.gender || '',
+      heightCm: profile.height || '',
+      weightKg: profile.weight || '',
       heightFt: '',
       heightIn: '',
       weightLbs: '',
+      faceScan: profile.faceScan,
+      bodyScan: profile.bodyScan,
     },
   });
 
-  function onSubmit(values: z.infer<typeof profileSchema>) {
+  // When profile loads from context, update the form
+  useEffect(() => {
+    if (user) {
+        // Function to convert cm to feet and inches
+        const toImperialHeight = (cm: string) => {
+            const totalInches = parseFloat(cm) / 2.54;
+            const feet = Math.floor(totalInches / 12);
+            const inches = Math.round(totalInches % 12);
+            return { feet: feet > 0 ? feet.toString() : '', inches: inches > 0 ? inches.toString() : '' };
+        };
+
+        // Function to convert kg to lbs
+        const toImperialWeight = (kg: string) => {
+            const lbs = parseFloat(kg) * 2.20462;
+            return lbs > 0 ? Math.round(lbs).toString() : '';
+        };
+        
+        const { feet, inches } = toImperialHeight(profile.height);
+
+        form.reset({
+            name: profile.name || '',
+            age: profile.age || '',
+            gender: profile.gender || '',
+            heightCm: profile.height || '',
+            weightKg: profile.weight || '',
+            heightFt: feet,
+            heightIn: inches,
+            weightLbs: toImperialWeight(profile.weight),
+            faceScan: profile.faceScan,
+            bodyScan: profile.bodyScan,
+        });
+    }
+  }, [profile, user, form]);
+
+  function onSubmit(values: ProfileFormValues) {
     let heightCm = values.heightCm;
     let weightKg = values.weightKg;
 
@@ -65,20 +106,24 @@ export function OnboardingForm() {
         const inches = parseInt(values.heightIn || '0');
         const lbs = parseInt(values.weightLbs || '0');
         
-        if (!isNaN(feet) && !isNaN(inches)) {
-            heightCm = ((feet * 12) + inches) * 2.54 + '';
+        if (!isNaN(feet) || !isNaN(inches)) {
+            heightCm = (((feet * 12) + inches) * 2.54).toFixed(2);
         }
         if (!isNaN(lbs)) {
-            weightKg = lbs * 0.453592 + '';
+            weightKg = (lbs * 0.453592).toFixed(2);
         }
     }
 
-    setProfile(prev => ({ 
-        ...prev, 
-        ...values,
+    setProfile({ 
+        ...profile,
+        name: values.name,
+        age: values.age,
+        gender: values.gender,
         height: heightCm || '',
         weight: weightKg || '',
-    }));
+        faceScan: values.faceScan || null,
+        bodyScan: values.bodyScan || null,
+    });
     toast({
       title: "Profile Updated",
       description: "Your personal details have been saved.",
@@ -91,7 +136,8 @@ export function OnboardingForm() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfile(prev => ({ ...prev, [type]: reader.result as string }));
+        const result = reader.result as string;
+        form.setValue(type, result);
         toast({ title: `${type === 'faceScan' ? 'Face' : 'Body'} Scan Updated` });
       };
       reader.readAsDataURL(file);
@@ -99,7 +145,7 @@ export function OnboardingForm() {
   };
   
   const ImageUploader = ({ type }: { type: 'faceScan' | 'bodyScan' }) => {
-    const imageSrc = type === 'faceScan' ? profile.faceScan : profile.bodyScan;
+    const imageSrc = form.watch(type);
     const title = type === 'faceScan' ? 'Face Scan' : 'Body Scan';
     const description = type === 'faceScan' ? 'Used for hairstyle suggestions.' : 'Used for wardrobe recommendations.';
     const inputRef = useRef<HTMLInputElement>(null);
@@ -134,7 +180,7 @@ export function OnboardingForm() {
               {imageSrc ? 'Change Scan' : 'Upload Scan'}
             </Button>
             {imageSrc && (
-              <Button variant="destructive" size="icon" type="button" onClick={() => setProfile(p => ({...p, [type]: null}))}>
+              <Button variant="destructive" size="icon" type="button" onClick={() => form.setValue(type, null)}>
                 <Trash2 className="w-4 h-4" />
                 <span className="sr-only">Remove {title}</span>
               </Button>
@@ -270,5 +316,3 @@ export function OnboardingForm() {
     </Form>
   );
 }
-
-    

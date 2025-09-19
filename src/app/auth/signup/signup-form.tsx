@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, createUserProfile } from "@/lib/firebase";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -43,7 +43,8 @@ export function SignUpForm() {
   async function onSubmit(values: z.infer<typeof signUpSchema>) {
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      await createUserProfile(userCredential.user.uid, values.email);
       toast({
         title: "Account Created",
         description: "You have been successfully signed up.",
