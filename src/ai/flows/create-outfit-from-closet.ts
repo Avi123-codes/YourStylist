@@ -57,7 +57,7 @@ const createOutfitFromClosetFlow = ai.defineFlow(
         inputSchema: CreateOutfitFromClosetInputSchema,
         outputSchema: CreateOutfitFromClosetOutputSchema,
     },
-    async (input) => {
+    async (input): Promise<CreateOutfitFromClosetOutput | null> => {
         const { output } = await prompt(input);
         return output;
     }

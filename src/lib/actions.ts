@@ -5,7 +5,7 @@ import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from
 import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
 import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
 import { virtualTryOn as virtualTryOnFlow, type VirtualTryOnInput } from '@/ai/flows/virtual-try-on';
-import { createOutfitFromCloset as createOutfitFromClosetFlow, type CreateOutfitFromClosetInput } from '@/ai/flows/create-outfit-from-closet';
+import { createOutfitFromCloset as createOutfitFromClosetFlow, type CreateOutfitFromClosetInput, type CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
 
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
@@ -59,7 +59,7 @@ export async function virtualTryOn(input: VirtualTryOnInput) {
     }
 }
 
-export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput) {
+export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput, error?: string }> {
     try {
         const result = await createOutfitFromClosetFlow(input);
         if (!result) {
