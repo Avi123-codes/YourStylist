@@ -18,8 +18,13 @@ export default function LandingPage() {
       </div>
       
       {/* Header */}
-      <header className="relative z-10 flex h-20 items-center justify-center px-4 sm:px-6">
+      <header className="relative z-10 flex h-20 items-center justify-between px-4 sm:px-6">
         <h1 className="font-headline text-3xl font-bold tracking-wide text-white">YourStylist</h1>
+        <Button asChild variant="ghost" className="text-white hover:bg-white/10">
+            <Link href="/auth/signin">
+                Sign In
+            </Link>
+        </Button>
       </header>
       
       {/* Content */}
@@ -32,7 +37,7 @@ export default function LandingPage() {
             Discover your perfect look with AI-powered style recommendations for hair, clothes, and more.
           </p>
           <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Link href="/onboarding">
+            <Link href="/auth/signup">
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
