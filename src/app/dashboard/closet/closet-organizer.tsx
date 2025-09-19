@@ -13,84 +13,63 @@ import { getItemDescription } from '@/lib/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
+import { useUserProfile, type ClothingItem as ProfileClothingItem } from '@/context/user-profile-context';
 
-interface ClothingItem {
-    id: string;
-    imageDataUri: string;
-    description: string | null;
+
+// We add a transient `isDescribing` property for UI state
+interface ClothingItem extends ProfileClothingItem {
     isDescribing: boolean;
 }
 
 interface SuggestedOutfit {
-    items: ClothingItem[];
+    items: ProfileClothingItem[];
     reasoning: string;
 }
 
-type StoredClothingItem = Omit<ClothingItem, 'isDescribing'>;
-
 export function ClosetOrganizer() {
-    const [closetItems, setClosetItems] = useState<ClothingItem[]>([]);
+    // Local state for UI purposes only
+    const [localItems, setLocalItems] = useState<ClothingItem[]>([]);
     const [occasion, setOccasion] = useState('');
     const [isCreatingOutfit, setIsCreatingOutfit] = useState(false);
     const [suggestion, setSuggestion] = useState<SuggestedOutfit | null>(null);
+    
+    // Global state from context for persistence
+    const { profile, setProfile } = useUserProfile();
     const { toast } = useToast();
 
-    // Load items from localStorage on component mount
+    // Sync global state from context to local UI state on mount
     useEffect(() => {
-        try {
-            const savedItemsJSON = localStorage.getItem('closetItems');
-            if (savedItemsJSON) {
-                const savedItems: StoredClothingItem[] = JSON.parse(savedItemsJSON);
-                // Add the transient `isDescribing` property back
-                setClosetItems(savedItems.map(item => ({ ...item, isDescribing: false })));
-            }
-        } catch (error) {
-            console.error("Failed to load items from localStorage", error);
-            toast({ title: 'Could not load saved items', variant: 'destructive' });
-        }
-    }, [toast]); // Added toast to dependency array as it's used inside the effect's catch block
-
-    // Save items to localStorage whenever they change
-    useEffect(() => {
-        try {
-            // We only store the permanent data, not the transient `isDescribing` state.
-            const itemsToSave: StoredClothingItem[] = closetItems.map(({ id, imageDataUri, description }) => ({ id, imageDataUri, description }));
-            // Avoid saving an empty array on first load if nothing exists
-            if (itemsToSave.length > 0 || localStorage.getItem('closetItems')) {
-                 localStorage.setItem('closetItems', JSON.stringify(itemsToSave));
-            }
-        } catch (error) {
-            console.error("Failed to save items to localStorage", error);
-            toast({ title: 'Could not save your closet', variant: 'destructive' });
-        }
-    }, [closetItems, toast]);
+        setLocalItems(profile.closetItems.map(item => ({ ...item, isDescribing: false })));
+    }, [profile.closetItems]);
 
 
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files) {
-            const newItems: ClothingItem[] = [];
             for (const file of Array.from(files)) {
                 const id = `item-${Date.now()}-${Math.random()}`;
                 const reader = new FileReader();
-                
+
+                // Add to local state immediately for UI feedback
                 const newItem: ClothingItem = {
                     id,
                     imageDataUri: '',
                     description: null,
                     isDescribing: true,
                 };
-                newItems.push(newItem);
+                setLocalItems(prev => [...prev, newItem]);
 
                 reader.onloadend = () => {
                     const imageDataUri = reader.result as string;
-                    setClosetItems(prev => prev.map(item => item.id === id ? { ...item, imageDataUri } : item));
+
+                    // Update local item with image data
+                    setLocalItems(prev => prev.map(item => item.id === id ? { ...item, imageDataUri } : item));
+                    
+                    // Call AI for description
                     describeItem(id, imageDataUri);
                 };
                 reader.readAsDataURL(file);
             }
-
-            setClosetItems(prev => [...prev, ...newItems]);
             toast({ title: `${files.length} item(s) being added...` });
         }
     };
@@ -98,25 +77,40 @@ export function ClosetOrganizer() {
     const describeItem = async (id: string, imageDataUri: string) => {
         const result = await getItemDescription({ photoDataUri: imageDataUri });
 
-        setClosetItems(prev => prev.map(item => {
-            if (item.id === id) {
-                if (result.success && result.data) {
-                    return { ...item, description: result.data.description, isDescribing: false };
-                } else {
-                     toast({ title: 'Description Failed', description: 'Could not get description for an item.', variant: 'destructive' });
-                    return { ...item, description: 'Unknown Item', isDescribing: false };
-                }
-            }
-            return item;
+        let finalDescription = 'Unknown Item';
+        if (result.success && result.data) {
+            finalDescription = result.data.description;
+        } else {
+            toast({ title: 'Description Failed', description: 'Could not get description for an item.', variant: 'destructive' });
+        }
+        
+        // Update local state to stop loading indicator
+        setLocalItems(prev => prev.map(item =>
+            item.id === id ? { ...item, description: finalDescription, isDescribing: false } : item
+        ));
+        
+        // **Update global state (context) to persist the new item**
+        setProfile(prevProfile => ({
+            ...prevProfile,
+            closetItems: [
+                ...prevProfile.closetItems,
+                { id, imageDataUri, description: finalDescription }
+            ]
         }));
     };
 
     const removeItem = (id: string) => {
-        setClosetItems(prev => prev.filter(item => item.id !== id));
+        // Remove from local state
+        setLocalItems(prev => prev.filter(item => item.id !== id));
+        // Remove from global state
+        setProfile(prevProfile => ({
+            ...prevProfile,
+            closetItems: prevProfile.closetItems.filter(item => item.id !== id)
+        }));
     };
 
     const handleCreateOutfit = async () => {
-        const describableItems = closetItems.filter(item => item.description);
+        const describableItems = localItems.filter(item => item.description && !item.isDescribing);
         if (describableItems.length < 2) {
             toast({ title: 'Not enough items', description: 'Please add and describe at least two items.', variant: 'destructive' });
             return;
@@ -135,8 +129,8 @@ export function ClosetOrganizer() {
 
         if (result.success && result.data) {
             const suggestedItems = result.data.outfit?.map(chosenItem => {
-                return closetItems.find(item => item.id === chosenItem.id);
-            }).filter((item): item is ClothingItem => !!item) || [];
+                return localItems.find(item => item.id === chosenItem.id);
+            }).filter((item): item is ProfileClothingItem => !!item) || [];
             
             setSuggestion({
                 items: suggestedItems,
@@ -148,20 +142,20 @@ export function ClosetOrganizer() {
         setIsCreatingOutfit(false);
     };
 
-    const allItemsDescribed = closetItems.every(item => !item.isDescribing);
+    const allItemsDescribed = localItems.every(item => !item.isDescribing);
 
     return (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><GalleryHorizontal /> Your Digital Closet</CardTitle>
-                    <CardDescription>Upload photos of your clothes. The AI will automatically describe them for you.</CardDescription>
+                    <CardDescription>Upload photos of your clothes. The items will be saved to your profile and persist when you navigate away.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                        {closetItems.map(item => (
+                        {localItems.map(item => (
                             <div key={item.id} className="relative group aspect-square">
-                                {item.isDescribing && !item.imageDataUri && <Skeleton className="absolute inset-0" />}
+                                {(item.isDescribing && !item.imageDataUri) && <Skeleton className="absolute inset-0" />}
                                 {item.imageDataUri && <Image src={item.imageDataUri} alt={item.description || "Closet item"} fill className="object-cover rounded-md border" />}
                                 <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1 text-xs text-center truncate">{item.isDescribing ? 'Analyzing...' : item.description}</div>
                                 <Button
@@ -200,7 +194,7 @@ export function ClosetOrganizer() {
                             placeholder="e.g., Work meeting, casual brunch..."
                         />
                     </div>
-                    <Button onClick={handleCreateOutfit} disabled={isCreatingOutfit || !allItemsDescribed || closetItems.length < 2}>
+                    <Button onClick={handleCreateOutfit} disabled={isCreatingOutfit || !allItemsDescribed || localItems.length < 2}>
                         {isCreatingOutfit ? <><Bot className="mr-2 animate-spin"/>Styling... </>: <><Lightbulb className="mr-2"/>Create Outfit</>}
                     </Button>
                 </CardContent>
@@ -244,5 +238,3 @@ export function ClosetOrganizer() {
         </div>
     );
 }
-
-    

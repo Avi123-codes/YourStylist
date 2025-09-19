@@ -2,6 +2,13 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// Define the type for a single clothing item
+export type ClothingItem = {
+  id: string;
+  imageDataUri: string;
+  description: string | null;
+};
+
 type UserProfile = {
   name: string;
   age: string;
@@ -10,6 +17,7 @@ type UserProfile = {
   gender: string;
   faceScan: string | null;
   bodyScan: string | null;
+  closetItems: ClothingItem[];
 };
 
 type UserProfileContextType = {
@@ -28,6 +36,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     gender: 'male',
     faceScan: null,
     bodyScan: null,
+    closetItems: [],
   });
 
   return (
