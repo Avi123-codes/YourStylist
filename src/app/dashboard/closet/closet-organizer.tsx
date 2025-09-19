@@ -32,6 +32,33 @@ export function ClosetOrganizer() {
     const [suggestion, setSuggestion] = useState<SuggestedOutfit | null>(null);
     const { toast } = useToast();
 
+    // Load items from localStorage on component mount
+    useEffect(() => {
+        try {
+            const savedItems = localStorage.getItem('closetItems');
+            if (savedItems) {
+                const parsedItems: Omit<ClothingItem, 'isDescribing'>[] = JSON.parse(savedItems);
+                setClosetItems(parsedItems.map(item => ({ ...item, isDescribing: false })));
+            }
+        } catch (error) {
+            console.error("Failed to load items from localStorage", error);
+            toast({ title: 'Could not load saved items', variant: 'destructive'});
+        }
+    }, []);
+
+    // Save items to localStorage whenever they change
+    useEffect(() => {
+        try {
+            // We only store the permanent data, not the transient `isDescribing` state.
+            const itemsToSave = closetItems.map(({ id, imageDataUri, description }) => ({ id, imageDataUri, description }));
+            localStorage.setItem('closetItems', JSON.stringify(itemsToSave));
+        } catch (error) {
+            console.error("Failed to save items to localStorage", error);
+            toast({ title: 'Could not save items', variant: 'destructive'});
+        }
+    }, [closetItems]);
+
+
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files) {
