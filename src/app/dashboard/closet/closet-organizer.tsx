@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,6 +32,10 @@ export function ClosetOrganizer() {
     const { closetItems } = profile;
     const { toast } = useToast();
 
+    // Use a ref to get the latest closetItems inside async callbacks
+    const closetItemsRef = useRef(closetItems);
+    closetItemsRef.current = closetItems;
+
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files) {
@@ -49,10 +54,10 @@ export function ClosetOrganizer() {
                         description: null,
                     };
                     
-                    // Add to context immediately for UI feedback, but without a description
+                    // Add to context immediately for UI feedback
                     setProfile({
                         ...profile,
-                        closetItems: [...closetItems, newItem]
+                        closetItems: [...closetItemsRef.current, newItem]
                     });
                     
                     // Call AI for description
@@ -64,31 +69,43 @@ export function ClosetOrganizer() {
         }
     };
     
-    const describeItem = async (id: string, imageDataUri: string) => {
-        const result = await getItemDescription({ photoDataUri: imageDataUri });
-
+    const describeItem = useCallback(async (id: string, imageDataUri: string) => {
         let finalDescription = 'Unknown Item';
-        if (result.success && result.data) {
-            finalDescription = result.data.description;
-        } else {
-            toast({ title: 'Description Failed', description: 'Could not get description for an item.', variant: 'destructive' });
-        }
-        
-        // Update the specific item in the context with its new description
-        setProfile({
-            ...profile,
-            closetItems: profile.closetItems.map(item => 
+        try {
+            const result = await getItemDescription({ photoDataUri: imageDataUri });
+            if (result.success && result.data) {
+                finalDescription = result.data.description;
+            } else {
+                toast({ title: 'Description Failed', description: result.error || 'Could not get description for an item.', variant: 'destructive' });
+            }
+        } catch (error) {
+             toast({ title: 'Description Error', description: 'An unexpected error occurred while getting the description.', variant: 'destructive' });
+        } finally {
+            // Use the ref to ensure we have the most up-to-date closet state
+            const currentCloset = closetItemsRef.current;
+            const updatedCloset = currentCloset.map(item => 
                 item.id === id ? { ...item, description: finalDescription } : item
-            )
-        });
+            );
 
-        // Remove from describing set
-        setDescribingItems(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-        });
-    };
+            // If the item wasn't in the list for some reason, add it (edge case)
+            if (!updatedCloset.find(item => item.id === id)) {
+                 updatedCloset.push({ id, imageDataUri, description: finalDescription });
+            }
+            
+            // Update the profile with the final list
+            setProfile({
+                ...profile,
+                closetItems: updatedCloset
+            });
+
+            // Remove from describing set
+            setDescribingItems(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(id);
+                return newSet;
+            });
+        }
+    }, [profile, setProfile, toast]);
 
     const removeItem = (id: string) => {
         setProfile({
