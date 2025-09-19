@@ -30,7 +30,7 @@ const CreateOutfitFromClosetOutputSchema = z.object({
 });
 export type CreateOutfitFromClosetOutput = z.infer<typeof CreateOutfitFromClosetOutputSchema>;
 
-export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<CreateOutfitFromClosetOutput> {
+export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<CreateOutfitFromClosetOutput | null> {
     return createOutfitFromClosetFlow(input);
 }
 
@@ -59,9 +59,6 @@ const createOutfitFromClosetFlow = ai.defineFlow(
     },
     async (input) => {
         const { output } = await prompt(input);
-        if (!output) {
-            throw new Error('Could not generate an outfit suggestion.');
-        }
         return output;
     }
 );

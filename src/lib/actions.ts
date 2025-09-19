@@ -63,11 +63,12 @@ export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput)
     try {
         const result = await createOutfitFromClosetFlow(input);
         if (!result) {
-            return { success: false, error: 'The AI could not generate a suggestion. Please try again.' };
+            return { success: false, error: 'The AI could not generate a suggestion. Please try again or rephrase your occasion.' };
         }
         return { success: true, data: result };
     } catch (error) {
-        console.error(error);
-        return { success: false, error: (error as Error).message || 'Failed to create outfit from closet.' };
+        console.error('Error in createOutfitFromCloset action:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, error: `Failed to create outfit from closet: ${errorMessage}` };
     }
 }
