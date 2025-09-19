@@ -59,24 +59,29 @@ export async function virtualTryOn(input: VirtualTryOnInput) {
     }
 }
 
-export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput; error?: string }> {
+export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput | null; error?: string }> {
     try {
         const result = await createOutfitFromClosetFlow(input);
 
-        // Case 1: AI returns a valid outfit.
-        if (result && result.outfit && result.outfit.length > 0) {
-            return { success: true, data: result };
+        // Case 1: The AI flow itself failed catastrophically.
+        if (!result) {
+            console.error('createOutfitFromClosetFlow returned null.');
+            return { success: false, error: 'The AI stylist encountered a critical error. Please try again.' };
         }
 
-        // Case 2: AI gracefully determines no outfit can be made.
-        // We use the AI's reasoning for the error message, with a fallback.
-        const errorMessage = result?.reasoning || 'The AI stylist could not create an outfit. Please try a different occasion or add more items.';
-        return { success: false, error: errorMessage };
+        // Case 2: The AI determined no outfit could be made.
+        if (!result.outfit || result.outfit.length === 0) {
+            const reasoning = result.reasoning || 'The AI could not create an outfit from the selected items.';
+            return { success: false, error: reasoning };
+        }
+        
+        // Case 3: Success! A valid outfit was returned.
+        return { success: true, data: result };
 
     } catch (error) {
-        // Case 3: A catastrophic error occurred during the AI flow execution.
+        // Case 4: An unexpected error occurred within the server action.
         console.error('Error in createOutfitFromCloset action:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while creating the outfit.';
+        const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
         return { success: false, error: errorMessage };
     }
 }

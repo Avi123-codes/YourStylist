@@ -26,7 +26,7 @@ const CreateOutfitFromClosetOutputSchema = z.object({
         itemName: z.string().describe("The descriptive name of the clothing item chosen for the outfit, e.g., 'Blue Denim Jacket'."),
         category: z.string().describe("The category of the item, e.g., 'Top', 'Bottoms', 'Outerwear', 'Footwear', 'Accessory'."),
         imageDataUri: z.string().describe("The original data URI of the selected clothing item image."),
-    })).optional().describe("An array of 2-4 clothing items that form a cohesive outfit. This field can be null or empty if no suitable outfit is found."),
+    })).optional().nullable().describe("An array of 2-4 clothing items that form a cohesive outfit. This field can be null if no suitable outfit is found."),
     reasoning: z.string().describe("A brief explanation for why this outfit was chosen, or why no outfit could be created. This MUST be provided."),
 });
 export type CreateOutfitFromClosetOutput = z.infer<typeof CreateOutfitFromClosetOutputSchema>;
@@ -39,22 +39,20 @@ const prompt = ai.definePrompt({
     name: 'createOutfitFromClosetPrompt',
     input: { schema: CreateOutfitFromClosetInputSchema },
     output: { schema: CreateOutfitFromClosetOutputSchema },
-    prompt: `You are a personal stylist. Your task is to create a stylish outfit for the specified occasion using ONLY the items provided.
+    prompt: `You are a personal stylist. Create an outfit for the specified occasion using ONLY the items provided.
 
     Occasion: {{{occasion}}}
 
-    Available Clothing Items:
+    Available Items:
     {{#each clothingItems}}
     - Item Image: {{media url=this.imageDataUri}} (imageDataUri: {{{this.imageDataUri}}})
     {{/each}}
     
-    Instructions:
-    1.  Analyze the provided clothing items and the occasion.
-    2.  Select between 2 and 4 items that form a cohesive and appropriate outfit.
-    3.  For EACH selected item, you MUST return the original 'imageDataUri' that was provided with the image.
-    4.  Also return a descriptive 'itemName' and 'category' for each item.
-    5.  Provide a 'reasoning' for your outfit choice.
-    6.  If you cannot create a suitable outfit from the items, you MUST return a null value for the 'outfit' field and explain why in the 'reasoning' field. The reasoning field must always contain an explanation.
+    Select 2-4 items. For each item, return the original 'imageDataUri'.
+    
+    Provide a 'reasoning' for your choice.
+    
+    If no suitable outfit can be made, return a null value for the 'outfit' field and explain why in the 'reasoning' field.
     `,
 });
 
@@ -63,10 +61,16 @@ const createOutfitFromClosetFlow = ai.defineFlow(
     {
         name: 'createOutfitFromClosetFlow',
         inputSchema: CreateOutfitFromClosetInputSchema,
-        outputSchema: CreateOutfitFromClosetOutputSchema,
+        outputSchema: z.nullable(CreateOutfitFromClosetOutputSchema),
     },
     async (input): Promise<CreateOutfitFromClosetOutput | null> => {
-        const { output } = await prompt(input);
-        return output;
+        try {
+            const { output } = await prompt(input);
+            return output;
+        } catch (error) {
+            console.error("Catastrophic error in createOutfitFromClosetFlow:", error);
+            // Return null to prevent the entire server process from crashing.
+            return null;
+        }
     }
 );
