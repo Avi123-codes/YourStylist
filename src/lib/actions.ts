@@ -7,13 +7,7 @@ import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/a
 import { virtualTryOn as virtualTryOnFlow, type VirtualTryOnInput } from '@/ai/flows/virtual-try-on';
 import { createOutfitFromCloset as createOutfitFromClosetFlow, type CreateOutfitFromClosetInput, type CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
 import { getItemDescription as getItemDescriptionFlow } from '@/ai/flows/get-item-description';
-import type { GetItemDescriptionInput as GetItemDescriptionInputType } from '@/ai/flows/get-item-description';
-
-// Define Zod schemas here to avoid exporting them from a 'use server' file.
-export const GetItemDescriptionOutputSchema = z.object({
-    description: z.string(),
-});
-export type GetItemDescriptionOutput = z.infer<typeof GetItemDescriptionOutputSchema>;
+import type { GetItemDescriptionInput as GetItemDescriptionInputType, GetItemDescriptionOutput } from '@/lib/schema';
 
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
