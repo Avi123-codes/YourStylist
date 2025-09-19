@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -18,35 +19,66 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Camera, Trash2, ArrowRight } from "lucide-react";
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   age: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid age." }),
-  height: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid height." }),
-  weight: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Invalid weight." }),
   gender: z.string(),
+  // Metric fields (will be populated by conversion)
+  heightCm: z.string().optional(),
+  weightKg: z.string().optional(),
+  // Imperial fields
+  heightFt: z.string().optional(),
+  heightIn: z.string().optional(),
+  weightLbs: z.string().optional(),
 });
 
 export function OnboardingForm() {
   const { profile, setProfile } = useUserProfile();
   const { toast } = useToast();
   const router = useRouter();
+  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: profile.name,
       age: profile.age,
-      height: profile.height,
-      weight: profile.weight,
       gender: profile.gender,
+      heightCm: profile.height,
+      weightKg: profile.weight,
+      heightFt: '',
+      heightIn: '',
+      weightLbs: '',
     },
   });
 
   function onSubmit(values: z.infer<typeof profileSchema>) {
-    setProfile(prev => ({ ...prev, ...values }));
+    let heightCm = values.heightCm;
+    let weightKg = values.weightKg;
+
+    if (units === 'imperial') {
+        const feet = parseInt(values.heightFt || '0');
+        const inches = parseInt(values.heightIn || '0');
+        const lbs = parseInt(values.weightLbs || '0');
+        
+        if (!isNaN(feet) && !isNaN(inches)) {
+            heightCm = ((feet * 12) + inches) * 2.54 + '';
+        }
+        if (!isNaN(lbs)) {
+            weightKg = lbs * 0.453592 + '';
+        }
+    }
+
+    setProfile(prev => ({ 
+        ...prev, 
+        ...values,
+        height: heightCm || '',
+        weight: weightKg || '',
+    }));
     toast({
       title: "Profile Updated",
       description: "Your personal details have been saved.",
@@ -152,22 +184,74 @@ export function OnboardingForm() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <FormField control={form.control} name="height" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Height (cm)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 180" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="weight" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Weight (kg)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 75" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+
+                <div className="space-y-2">
+                    <FormLabel>Units</FormLabel>
+                    <RadioGroup
+                        value={units}
+                        onValueChange={(value: 'metric' | 'imperial') => setUnits(value)}
+                        className="flex gap-4"
+                    >
+                        <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                                <RadioGroupItem value="metric" id="metric" />
+                            </FormControl>
+                            <FormLabel htmlFor="metric" className="font-normal">Metric (cm, kg)</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                                <RadioGroupItem value="imperial" id="imperial" />
+                            </FormControl>
+                            <FormLabel htmlFor="imperial" className="font-normal">Imperial (ft, lbs)</FormLabel>
+                        </FormItem>
+                    </RadioGroup>
                 </div>
+                
+                {units === 'metric' ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="heightCm" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Height (cm)</FormLabel>
+                                <FormControl><Input type="number" placeholder="e.g., 180" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="weightKg" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Weight (kg)</FormLabel>
+                                <FormControl><Input type="number" placeholder="e.g., 75" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormItem>
+                             <FormLabel>Height</FormLabel>
+                            <div className="flex gap-2">
+                                <FormField control={form.control} name="heightFt" render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl><Input type="number" placeholder="ft" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="heightIn" render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl><Input type="number" placeholder="in" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        </FormItem>
+                        <FormField control={form.control} name="weightLbs" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Weight (lbs)</FormLabel>
+                                <FormControl><Input type="number" placeholder="e.g., 165" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
+                )}
             </CardContent>
           </Card>
 
@@ -186,3 +270,5 @@ export function OnboardingForm() {
     </Form>
   );
 }
+
+    
