@@ -55,43 +55,52 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUser(user); // Set user immediately
       if (!user) {
-        // If no user, reset state and handle redirects
+        // Not logged in
         setProfileState(initialProfile);
         setLoading(false);
+        // If user is not logged in, and tries to access a protected route, redirect to signin.
         if (pathname.startsWith('/dashboard') || pathname === '/onboarding') {
           router.push('/auth/signin');
         }
       }
-      // Data fetching for logged-in user is handled in the next useEffect
+      // If user is logged in, the next useEffect will handle data fetching and redirects.
     });
 
     return () => unsubscribeAuth();
   }, [router, pathname]);
 
   useEffect(() => {
-    if (user) {
-      // User is logged in, now listen for their profile changes
-      const userDocRef = doc(db, 'users', user.uid);
-      const unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setProfileState(docSnap.data() as UserProfile);
-          if (pathname.startsWith('/auth')) {
-            router.push('/dashboard');
-          }
-        } else {
-          // Profile doesn't exist, likely a new user
-          if (pathname !== '/onboarding' && !pathname.startsWith('/auth')) {
-            router.push('/onboarding');
-          }
-        }
+    if (!user) {
+        // If there's no user, we don't need to listen to Firestore.
+        // The auth state listener above handles the non-logged-in case.
         setLoading(false);
-      }, (error) => {
-          console.error("Firestore snapshot error:", error);
-          setLoading(false); // Stop loading even if there's an error
-      });
-
-      return () => unsubscribeFirestore();
+        return;
     }
+
+    // User is logged in, now listen for their profile changes.
+    const userDocRef = doc(db, 'users', user.uid);
+    const unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
+        setLoading(false);
+        if (docSnap.exists()) {
+            // Profile exists
+            setProfileState(docSnap.data() as UserProfile);
+            // If logged in and on an auth page, redirect to dashboard
+            if (pathname.startsWith('/auth')) {
+                router.push('/dashboard');
+            }
+        } else {
+            // Profile doesn't exist, likely a new user.
+            // Redirect to onboarding unless they are on an auth page.
+            if (pathname !== '/onboarding' && !pathname.startsWith('/auth')) {
+                router.push('/onboarding');
+            }
+        }
+    }, (error) => {
+        console.error("Firestore snapshot error:", error);
+        setLoading(false); // Stop loading even if there's an error
+    });
+
+    return () => unsubscribeFirestore();
   }, [user, router, pathname]);
   
   const handleSetProfile = async (newProfile: UserProfile) => {
