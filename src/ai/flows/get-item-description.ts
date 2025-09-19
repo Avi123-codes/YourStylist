@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const GetItemDescriptionInputSchema = z.object({
+const GetItemDescriptionInputSchema = z.object({
     photoDataUri: z
         .string()
         .describe(
@@ -19,7 +19,7 @@ export const GetItemDescriptionInputSchema = z.object({
 });
 export type GetItemDescriptionInput = z.infer<typeof GetItemDescriptionInputSchema>;
 
-export const GetItemDescriptionOutputSchema = z.object({
+const GetItemDescriptionOutputSchema = z.object({
     description: z.string().describe("A brief, 3-5 word description of the clothing item (e.g., 'Blue Denim Jacket', 'Black Leather Boots')."),
 });
 export type GetItemDescriptionOutput = z.infer<typeof GetItemDescriptionOutputSchema>;

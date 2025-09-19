@@ -1,12 +1,20 @@
 'use server';
-
+import { z } from 'zod';
 import { rateOutfitAndSuggestImprovements, type OutfitRatingAndSuggestionsInput } from '@/ai/flows/outfit-rating-and-suggestions';
 import { suggestHairstylesFromPhoto, type SuggestHairstylesFromPhotoInput } from '@/ai/flows/suggest-hairstyles-from-photo';
 import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInput } from '@/ai/flows/suggest-wardrobe-from-preferences';
 import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
 import { virtualTryOn as virtualTryOnFlow, type VirtualTryOnInput } from '@/ai/flows/virtual-try-on';
 import { createOutfitFromCloset as createOutfitFromClosetFlow, type CreateOutfitFromClosetInput, type CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
-import { getItemDescription as getItemDescriptionFlow, type GetItemDescriptionInput, type GetItemDescriptionOutput } from '@/ai/flows/get-item-description';
+import { getItemDescription as getItemDescriptionFlow } from '@/ai/flows/get-item-description';
+import type { GetItemDescriptionInput as GetItemDescriptionInputType } from '@/ai/flows/get-item-description';
+
+// Define Zod schemas here to avoid exporting them from a 'use server' file.
+export const GetItemDescriptionOutputSchema = z.object({
+    description: z.string(),
+});
+export type GetItemDescriptionOutput = z.infer<typeof GetItemDescriptionOutputSchema>;
+
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
     try {
@@ -74,7 +82,7 @@ export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput)
     }
 }
 
-export async function getItemDescription(input: GetItemDescriptionInput): Promise<{ success: boolean; data?: GetItemDescriptionOutput; error?: string }> {
+export async function getItemDescription(input: GetItemDescriptionInputType): Promise<{ success: boolean; data?: GetItemDescriptionOutput; error?: string }> {
     try {
         const result = await getItemDescriptionFlow(input);
         return { success: true, data: result };
