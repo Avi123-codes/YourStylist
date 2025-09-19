@@ -142,14 +142,20 @@ export function ClosetOrganizer() {
                         </Alert>
                         <Card>
                            <CardContent className="p-4">
-                                <h4 className="font-semibold mb-2">Suggested Items:</h4>
-                                <ul className="list-disc list-inside space-y-1">
-                                    {suggestion.outfit.map(item => (
-                                        <li key={item.itemName}>
-                                            <span className="font-semibold">{item.itemName}</span> ({item.category})
-                                        </li>
+                                <h4 className="font-semibold mb-4">Suggested Items:</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    {suggestion.outfit.map((item, index) => (
+                                        <div key={index} className="flex flex-col items-center text-center gap-2">
+                                            <div className="relative w-full aspect-square rounded-md border overflow-hidden">
+                                                <Image src={item.imageDataUri} alt={item.itemName} fill className="object-cover" />
+                                            </div>
+                                            <div className='text-sm'>
+                                                <p className="font-semibold">{item.itemName}</p>
+                                                <p className="text-muted-foreground">({item.category})</p>
+                                            </div>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
                             </CardContent>
                         </Card>
                     </CardContent>
