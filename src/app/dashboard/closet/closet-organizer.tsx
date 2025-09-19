@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Trash2, Bot, GalleryHorizontal, Sparkles, Lightbulb, Shirt, VenetianMask } from 'lucide-react';
+import { Upload, Trash2, Bot, GalleryHorizontal, Sparkles, Lightbulb, VenetianMask, AlertCircle } from 'lucide-react';
 import { createOutfitFromCloset } from '@/lib/actions';
 import type { CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -129,6 +129,14 @@ export function ClosetOrganizer() {
             
             {isLoading && <Skeleton className="h-64 w-full rounded-lg" />}
 
+            {!isLoading && !suggestion && (
+                <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>No Suggestion Yet</AlertTitle>
+                    <AlertDescription>Your AI-styled outfit will appear here once it's generated.</AlertDescription>
+                </Alert>
+            )}
+
             {suggestion && (
                 <Card>
                     <CardHeader>
@@ -143,19 +151,14 @@ export function ClosetOrganizer() {
                         <Card>
                            <CardContent className="p-4">
                                 <h4 className="font-semibold mb-4">Suggested Items:</h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                    {suggestion.outfit.map((item, index) => (
-                                        <div key={index} className="flex flex-col items-center text-center gap-2">
-                                            <div className="relative w-full aspect-square rounded-md border overflow-hidden">
-                                                <Image src={item.imageDataUri} alt={item.itemName} fill className="object-cover" />
-                                            </div>
-                                            <div className='text-sm'>
-                                                <p className="font-semibold">{item.itemName}</p>
-                                                <p className="text-muted-foreground">({item.category})</p>
-                                            </div>
-                                        </div>
+                                <ul className="list-disc list-inside space-y-2">
+                                    {suggestion.outfit?.map((item, index) => (
+                                        <li key={index}>
+                                            <span className="font-semibold">{item.itemName}</span>
+                                            <span className="text-muted-foreground"> ({item.category})</span>
+                                        </li>
                                     ))}
-                                </div>
+                                </ul>
                             </CardContent>
                         </Card>
                     </CardContent>

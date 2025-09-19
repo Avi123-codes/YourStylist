@@ -14,14 +14,13 @@ const ClothingItemInputSchema = z.object({
     imageDataUri: z.string().describe("An image of a clothing item from the user's closet as a data URI."),
 });
 
-export type CreateOutfitFromClosetInput = z.infer<typeof CreateOutfitFromClosetInputSchema>;
 const CreateOutfitFromClosetInputSchema = z.object({
     clothingItems: z.array(ClothingItemInputSchema).describe("An array of all clothing items available in the user's closet."),
     occasion: z.string().describe("The occasion the user is dressing for, e.g., 'Work meeting', 'Casual brunch'."),
 });
+export type CreateOutfitFromClosetInput = z.infer<typeof CreateOutfitFromClosetInputSchema>;
 
 
-export type CreateOutfitFromClosetOutput = z.infer<typeof CreateOutfitFromClosetOutputSchema>;
 const CreateOutfitFromClosetOutputSchema = z.object({
     outfit: z.array(z.object({
         itemName: z.string().describe("The descriptive name of the clothing item chosen for the outfit, e.g., 'Blue Denim Jacket'."),
@@ -30,6 +29,7 @@ const CreateOutfitFromClosetOutputSchema = z.object({
     })).optional().describe("An array of 2-4 clothing items that form a cohesive outfit. This can be empty if no suitable outfit is found."),
     reasoning: z.string().describe("A brief explanation for why this outfit was chosen, considering the occasion and how the items complement each other."),
 });
+export type CreateOutfitFromClosetOutput = z.infer<typeof CreateOutfitFromClosetOutputSchema>;
 
 export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<CreateOutfitFromClosetOutput | null> {
     return createOutfitFromClosetFlow(input);
@@ -54,7 +54,7 @@ const prompt = ai.definePrompt({
     3.  For EACH selected item, you MUST return the original 'imageDataUri' that was provided with the image.
     4.  Also return a descriptive 'itemName' and 'category' for each item.
     5.  Provide a 'reasoning' for your outfit choice.
-    6.  If you cannot create a suitable outfit from the items, return an empty 'outfit' array.
+    6.  If you cannot create a suitable outfit from the items, return an empty 'outfit' array and explain why in the 'reasoning' field.
     `,
 });
 
