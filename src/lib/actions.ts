@@ -6,7 +6,7 @@ import { suggestWardrobeFromPreferences, type SuggestWardrobeFromPreferencesInpu
 import { analyzeColors as analyzeColorsFlow, type AnalyzeColorsInput } from '@/ai/flows/analyze-colors';
 import { virtualTryOn as virtualTryOnFlow, type VirtualTryOnInput } from '@/ai/flows/virtual-try-on';
 import { createOutfitFromCloset as createOutfitFromClosetFlow, type CreateOutfitFromClosetInput, type CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
-
+import { getItemDescription as getItemDescriptionFlow, type GetItemDescriptionInput, type GetItemDescriptionOutput } from '@/ai/flows/get-item-description';
 
 export async function getHairstyleSuggestions(input: SuggestHairstylesFromPhotoInput) {
     try {
@@ -59,29 +59,27 @@ export async function virtualTryOn(input: VirtualTryOnInput) {
     }
 }
 
-export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput | null; error?: string }> {
+export async function createOutfitFromCloset(input: CreateOutfitFromClosetInput): Promise<{ success: boolean; data?: CreateOutfitFromClosetOutput; error?: string }> {
     try {
         const result = await createOutfitFromClosetFlow(input);
-
-        // Case 1: The AI flow itself failed catastrophically.
-        if (!result) {
-            console.error('createOutfitFromClosetFlow returned null.');
-            return { success: false, error: 'The AI stylist encountered a critical error. Please try again.' };
-        }
-
-        // Case 2: The AI determined no outfit could be made.
-        if (!result.outfit || result.outfit.length === 0) {
-            const reasoning = result.reasoning || 'The AI could not create an outfit from the selected items.';
+        if (result && result.outfit && result.outfit.length > 0) {
+            return { success: true, data: result };
+        } else {
+            const reasoning = result?.reasoning || "The AI stylist couldn't create an outfit from the provided items.";
             return { success: false, error: reasoning };
         }
-        
-        // Case 3: Success! A valid outfit was returned.
-        return { success: true, data: result };
-
     } catch (error) {
-        // Case 4: An unexpected error occurred within the server action.
         console.error('Error in createOutfitFromCloset action:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
-        return { success: false, error: errorMessage };
+        return { success: false, error: 'An unexpected error occurred while creating the outfit.' };
+    }
+}
+
+export async function getItemDescription(input: GetItemDescriptionInput): Promise<{ success: boolean; data?: GetItemDescriptionOutput; error?: string }> {
+    try {
+        const result = await getItemDescriptionFlow(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Error in getItemDescription action:', error);
+        return { success: false, error: 'Failed to get item description.' };
     }
 }

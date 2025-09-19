@@ -1,47 +1,79 @@
 "use client";
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Trash2, Bot, GalleryHorizontal, Sparkles, Lightbulb, VenetianMask, AlertCircle } from 'lucide-react';
-import { createOutfitFromCloset } from '@/lib/actions';
+import { createOutfitFromCloset, getItemDescription } from '@/lib/actions';
 import type { CreateOutfitFromClosetOutput } from '@/ai/flows/create-outfit-from-closet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 
-
 interface ClothingItem {
     id: string;
     imageDataUri: string;
+    description: string | null;
+    isDescribing: boolean;
+}
+
+interface SuggestedOutfit {
+    items: ClothingItem[];
+    reasoning: string;
 }
 
 export function ClosetOrganizer() {
     const [closetItems, setClosetItems] = useState<ClothingItem[]>([]);
     const [occasion, setOccasion] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [suggestion, setSuggestion] = useState<CreateOutfitFromClosetOutput | null>(null);
+    const [isCreatingOutfit, setIsCreatingOutfit] = useState(false);
+    const [suggestion, setSuggestion] = useState<SuggestedOutfit | null>(null);
     const { toast } = useToast();
 
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files) {
-            for (const file of Array.from(files)) {
+            const newItems: ClothingItem[] = Array.from(files).map(file => {
+                const id = `item-${Date.now()}-${Math.random()}`;
                 const reader = new FileReader();
+                const newItem: ClothingItem = {
+                    id,
+                    imageDataUri: '',
+                    description: null,
+                    isDescribing: true,
+                };
+
                 reader.onloadend = () => {
-                    const newItem: ClothingItem = {
-                        id: `item-${Date.now()}-${Math.random()}`,
-                        imageDataUri: reader.result as string,
-                    };
-                    setClosetItems(prev => [...prev, newItem]);
+                    const imageDataUri = reader.result as string;
+                    setClosetItems(prev => prev.map(item => item.id === id ? { ...item, imageDataUri } : item));
+                    describeItem(id, imageDataUri);
                 };
                 reader.readAsDataURL(file);
-            }
-            toast({ title: `${files.length} item(s) added to your closet.` });
+                
+                return newItem;
+            });
+
+            setClosetItems(prev => [...prev, ...newItems]);
+            toast({ title: `${files.length} item(s) being added...` });
         }
+    };
+    
+    const describeItem = async (id: string, imageDataUri: string) => {
+        const result = await getItemDescription({ photoDataUri: imageDataUri });
+
+        setClosetItems(prev => prev.map(item => {
+            if (item.id === id) {
+                if (result.success && result.data) {
+                    return { ...item, description: result.data.description, isDescribing: false };
+                } else {
+                     toast({ title: 'Description Failed', description: 'Could not get description for an item.', variant: 'destructive' });
+                    return { ...item, description: 'Unknown Item', isDescribing: false };
+                }
+            }
+            return item;
+        }));
     };
 
     const removeItem = (id: string) => {
@@ -49,42 +81,54 @@ export function ClosetOrganizer() {
     };
 
     const handleCreateOutfit = async () => {
-        if (closetItems.length < 2) {
-            toast({ title: 'Not enough items', description: 'Please add at least two items to your closet.', variant: 'destructive' });
+        const describableItems = closetItems.filter(item => item.description);
+        if (describableItems.length < 2) {
+            toast({ title: 'Not enough items', description: 'Please add and describe at least two items.', variant: 'destructive' });
             return;
         }
         if (!occasion) {
             toast({ title: 'Occasion is required', description: 'Please specify an occasion for the outfit.', variant: 'destructive' });
             return;
         }
-        setIsLoading(true);
+        setIsCreatingOutfit(true);
         setSuggestion(null);
 
         const result = await createOutfitFromCloset({
-            clothingItems: closetItems.map(item => ({ imageDataUri: item.imageDataUri })),
+            clothingItems: describableItems.map(({ id, description }) => ({ id, description: description! })),
             occasion,
         });
 
-        if (result.success && result.data) {
-            setSuggestion(result.data);
+        if (result.success && result.data && result.data.outfit) {
+            const suggestedItems = result.data.outfit.map(chosenItem => {
+                return closetItems.find(item => item.id === chosenItem.id);
+            }).filter((item): item is ClothingItem => !!item);
+            
+            setSuggestion({
+                items: suggestedItems,
+                reasoning: result.data.reasoning
+            });
         } else {
-            toast({ title: 'Error creating outfit', description: result.error || 'Something went wrong.', variant: 'destructive' });
+            toast({ title: 'Error creating outfit', description: result.error || 'The AI stylist could not create an outfit.', variant: 'destructive' });
         }
-        setIsLoading(false);
+        setIsCreatingOutfit(false);
     };
+
+    const allItemsDescribed = closetItems.every(item => !item.isDescribing);
 
     return (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><GalleryHorizontal /> Your Digital Closet</CardTitle>
-                    <CardDescription>Upload photos of your clothes to build your virtual closet. Then, ask the AI to create outfits for you!</CardDescription>
+                    <CardDescription>Upload photos of your clothes. The AI will automatically describe them for you.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
                         {closetItems.map(item => (
                             <div key={item.id} className="relative group aspect-square">
-                                <Image src={item.imageDataUri} alt="Closet item" fill className="object-cover rounded-md border" />
+                                {item.isDescribing && <Skeleton className="absolute inset-0" />}
+                                {item.imageDataUri && <Image src={item.imageDataUri} alt={item.description || "Closet item"} fill className="object-cover rounded-md border" />}
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1 text-xs text-center truncate">{item.isDescribing ? 'Analyzing...' : item.description}</div>
                                 <Button
                                     variant="destructive"
                                     size="icon"
@@ -121,15 +165,15 @@ export function ClosetOrganizer() {
                             placeholder="e.g., Work meeting, casual brunch..."
                         />
                     </div>
-                    <Button onClick={handleCreateOutfit} disabled={isLoading || closetItems.length < 2}>
-                        {isLoading ? <><Bot className="mr-2 animate-spin"/>Styling... </>: <><Lightbulb className="mr-2"/>Create Outfit</>}
+                    <Button onClick={handleCreateOutfit} disabled={isCreatingOutfit || !allItemsDescribed || closetItems.length < 2}>
+                        {isCreatingOutfit ? <><Bot className="mr-2 animate-spin"/>Styling... </>: <><Lightbulb className="mr-2"/>Create Outfit</>}
                     </Button>
                 </CardContent>
             </Card>
             
-            {isLoading && <Skeleton className="h-64 w-full rounded-lg" />}
+            {isCreatingOutfit && <Skeleton className="h-64 w-full rounded-lg" />}
 
-            {!isLoading && !suggestion && (
+            {!isCreatingOutfit && !suggestion && (
                 <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>No Suggestion Yet</AlertTitle>
@@ -148,23 +192,17 @@ export function ClosetOrganizer() {
                             <AlertTitle>Stylist's Note</AlertTitle>
                             <AlertDescription>{suggestion.reasoning}</AlertDescription>
                         </Alert>
-                        <Card>
-                           <CardContent className="p-4">
-                                <h4 className="font-semibold mb-4">Suggested Items:</h4>
-                                {suggestion.outfit && suggestion.outfit.length > 0 ? (
-                                    <ul className="list-disc list-inside space-y-2">
-                                        {suggestion.outfit.map((item, index) => (
-                                            <li key={index}>
-                                                <span className="font-semibold">{item.itemName}</span>
-                                                <span className="text-muted-foreground"> ({item.category})</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-muted-foreground">No items were suggested for this outfit.</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {suggestion.items.map(item => (
+                                <div key={item.id} className="space-y-2">
+                                    <div className="relative aspect-square">
+                                        <Image src={item.imageDataUri} alt={item.description || 'outfit item'} fill className="object-cover rounded-md border" />
+                                    </div>
+                                    <p className="text-sm text-center font-medium">{item.description}</p>
+                                </div>
+                            ))}
+                        </div>
                     </CardContent>
                 </Card>
             )}
