@@ -1,4 +1,4 @@
-import { ClosetOrganizer } from './closet-organizer';
+import ClosetOrganizer from './closet-organizer';
 
 export default function DigitalClosetPage() {
     return <ClosetOrganizer />;
