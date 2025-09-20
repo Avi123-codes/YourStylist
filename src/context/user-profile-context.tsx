@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { usePathname, useRouter } from 'next/navigation';
-import { onSnapshot, doc } from 'firebase/firestore';
+import { onSnapshot, doc, setDoc } from 'firebase/firestore';
 
 export type ClothingItem = {
   id: string;
@@ -52,56 +52,60 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        // User is logged out
         setProfileState(initialProfile);
-        setLoading(false);
+        setLoading(false); // If no user, we are not loading a profile
       }
-      // if user is logged in, we wait for the firestore listener to set loading to false
+      // If there is a user, loading will be set to false by the firestore listener
     });
-    return () => unsubscribe();
+    return () => authUnsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (loading) return; // Don't run routing logic while initial loading is in progress
-
-    const protectedPaths = ['/dashboard', '/onboarding'];
-    const authPaths = ['/auth/signin', '/auth/signup'];
-    
-    const isProtectedRoute = protectedPaths.some(p => pathname.startsWith(p));
-    const isAuthPath = authPaths.some(p => pathname.startsWith(p));
-
-    if (!user && isProtectedRoute) {
-        router.push('/auth/signin');
-    } else if (user && isAuthPath) {
-        router.push('/dashboard');
-    }
-
-  }, [user, pathname, router, loading]);
 
   useEffect(() => {
     if (user) {
       const docRef = doc(db, 'users', user.uid);
-      const unsubscribe = onSnapshot(docRef, async (docSnap) => {
+      const firestoreUnsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
-          const profileData = docSnap.data() as UserProfile;
-          setProfileState(profileData);
-        } else {
-          // If no profile exists, direct to onboarding unless on an auth page
-          if (!pathname.startsWith('/auth')) {
-             router.push('/onboarding');
-          }
+          setProfileState(docSnap.data() as UserProfile);
         }
+        // If doc doesn't exist, profile remains initialProfile, will trigger onboarding redirect on protected routes
         setLoading(false);
       }, (error) => {
-        console.error("Firestore error:", error);
+        console.error("Firestore snapshot error:", error);
         setLoading(false);
       });
-      return () => unsubscribe();
+      return () => firestoreUnsubscribe();
     }
-  }, [user, router, pathname]);
+  }, [user]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const publicPaths = ['/', '/auth/signin', '/auth/signup'];
+    const isPublicPath = publicPaths.includes(pathname);
+    const authPaths = ['/auth/signin', '/auth/signup'];
+    const isAuthPath = authPaths.includes(pathname);
+
+    if (!user) {
+      // User is not authenticated
+      if (!isPublicPath) {
+        router.push('/auth/signin');
+      }
+    } else {
+      // User is authenticated
+      const profileIsComplete = profile.name && profile.age && profile.height && profile.weight && profile.gender;
+
+      if (isAuthPath) {
+         // If on an auth page, redirect to dashboard
+        router.push('/dashboard');
+      } else if (!isPublicPath && !profileIsComplete && pathname !== '/onboarding') {
+        // If on a protected page that IS NOT onboarding, but profile is incomplete, redirect to onboarding
+        router.push('/onboarding');
+      }
+    }
+  }, [user, profile, pathname, router, loading]);
 
   const handleSetProfile = async (newProfile: UserProfile) => {
       setProfileState(newProfile); // Optimistic update
