@@ -44,22 +44,55 @@ const initialProfile: UserProfile = {
     closetItems: [],
 };
 
-export function UserProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfileState] = useState<UserProfile>(initialProfile);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+
+function UserProfileHandler({ children }: { children: ReactNode }) {
+  const { profile, setProfile, user, loading } = useUserProfile();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (loading) return;
+
+    const publicPaths = ['/', '/auth/signin', '/auth/signup'];
+    const isPublicPath = publicPaths.includes(pathname);
+    const authPaths = ['/auth/signin', '/auth/signup'];
+    const isAuthPath = authPaths.includes(pathname);
+
+    if (!user && !isPublicPath) {
+        router.push('/auth/signin');
+    } else if (user && isAuthPath) {
+        router.push('/dashboard');
+    }
+    
+  }, [user, pathname, router, loading]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+
+export function UserProfileProvider({ children }: { children: ReactNode }) {
+  const [profile, setProfileState] = useState<UserProfile>(initialProfile);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        setProfileState(initialProfile);
-        setLoading(false); // If no user, we are not loading a profile
+        setLoading(false);
       }
-      // If there is a user, loading will be set to false by the firestore listener
     });
+
     return () => authUnsubscribe();
   }, []);
 
@@ -81,51 +114,36 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       });
       return () => firestoreUnsubscribe();
     } else {
-        setLoading(false);
+      setProfileState(initialProfile);
+      setLoading(false);
     }
   }, [user]);
 
-  useEffect(() => {
-    if (loading) return;
-
-    const publicPaths = ['/', '/auth/signin', '/auth/signup'];
-    const isPublicPath = publicPaths.includes(pathname);
-    const authPaths = ['/auth/signin', '/auth/signup'];
-    const isAuthPath = authPaths.includes(pathname);
-
-    if (!user && !isPublicPath) {
-        // User is not authenticated and is trying to access a protected page
-        router.push('/auth/signin');
-    } else if (user && isAuthPath) {
-        // User is authenticated and is on an auth page
-        router.push('/dashboard');
-    }
-    
-  }, [user, pathname, router, loading]);
-
   const handleSetProfile = async (newProfile: UserProfile) => {
-      setProfileState(newProfile); // Optimistic update
+      setProfileState(newProfile);
       if (user) {
           try {
               const userDocRef = doc(db, 'users', user.uid);
-              // Use setDoc with merge:true which is equivalent to update but creates if it doesn't exist
               await setDoc(userDocRef, newProfile, { merge: true });
           } catch (error) {
               console.error("Failed to update profile in Firestore:", error);
-              // Optionally revert optimistic update or show toast
           }
       }
+  }
+  
+  if (!isClient) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Loading...</p>
+        </div>
+    );
   }
 
   return (
     <UserProfileContext.Provider value={{ profile, setProfile: handleSetProfile, user, loading }}>
-        {loading ? (
-            <div className="flex h-screen items-center justify-center">
-                <p>Loading...</p>
-            </div>
-        ) : (
-            children
-        )}
+        <UserProfileHandler>
+          {children}
+        </UserProfileHandler>
     </UserProfileContext.Provider>
   );
 }
