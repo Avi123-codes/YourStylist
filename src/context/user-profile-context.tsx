@@ -65,18 +65,23 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      setLoading(true);
       const docRef = doc(db, 'users', user.uid);
       const firestoreUnsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
           setProfileState(docSnap.data() as UserProfile);
+        } else {
+            setProfileState(initialProfile);
         }
-        // If doc doesn't exist, profile remains initialProfile, will trigger onboarding redirect on protected routes
         setLoading(false);
       }, (error) => {
         console.error("Firestore snapshot error:", error);
+        setProfileState(initialProfile);
         setLoading(false);
       });
       return () => firestoreUnsubscribe();
+    } else {
+        setLoading(false);
     }
   }, [user]);
 
@@ -88,24 +93,15 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     const authPaths = ['/auth/signin', '/auth/signup'];
     const isAuthPath = authPaths.includes(pathname);
 
-    if (!user) {
-      // User is not authenticated
-      if (!isPublicPath) {
+    if (!user && !isPublicPath) {
+        // User is not authenticated and is trying to access a protected page
         router.push('/auth/signin');
-      }
-    } else {
-      // User is authenticated
-      const profileIsComplete = profile.name && profile.age && profile.height && profile.weight && profile.gender;
-
-      if (isAuthPath) {
-         // If on an auth page, redirect to dashboard
+    } else if (user && isAuthPath) {
+        // User is authenticated and is on an auth page
         router.push('/dashboard');
-      } else if (!isPublicPath && !profileIsComplete && pathname !== '/onboarding') {
-        // If on a protected page that IS NOT onboarding, but profile is incomplete, redirect to onboarding
-        router.push('/onboarding');
-      }
     }
-  }, [user, profile, pathname, router, loading]);
+    
+  }, [user, pathname, router, loading]);
 
   const handleSetProfile = async (newProfile: UserProfile) => {
       setProfileState(newProfile); // Optimistic update
