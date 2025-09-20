@@ -22,10 +22,11 @@ interface SuggestedOutfit {
     reasoning: string;
 }
 
-export function ClosetOrganizer() {
+export default function ClosetOrganizer() {
     const [occasion, setOccasion] = useState('');
     const [isCreatingOutfit, setIsCreatingOutfit] = useState(false);
     const [suggestion, setSuggestion] = useState<SuggestedOutfit | null>(null);
+    const [creationError, setCreationError] = useState<string | null>(null);
     const [describingItems, setDescribingItems] = useState<Set<string>>(new Set());
     
     const { profile, setProfile } = useUserProfile();
@@ -126,6 +127,7 @@ export function ClosetOrganizer() {
         }
         setIsCreatingOutfit(true);
         setSuggestion(null);
+        setCreationError(null);
 
         const result = await createOutfitFromCloset({
             clothingItems: describableItems.map(({ id, description }) => ({ id, description: description! })),
@@ -142,7 +144,7 @@ export function ClosetOrganizer() {
                 reasoning: result.data.reasoning
             });
         } else {
-            toast({ title: 'Error creating outfit', description: result.error || 'The AI stylist could not create an outfit.', variant: 'destructive' });
+            setCreationError(result.error || 'The AI stylist could not create an outfit.');
         }
         setIsCreatingOutfit(false);
     };
@@ -207,11 +209,19 @@ export function ClosetOrganizer() {
             
             {isCreatingOutfit && <Skeleton className="h-64 w-full rounded-lg" />}
 
-            {!isCreatingOutfit && !suggestion && (
+            {!isCreatingOutfit && !suggestion && !creationError && (
                 <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>No Suggestion Yet</AlertTitle>
                     <AlertDescription>Your AI-styled outfit will appear here once it's generated.</AlertDescription>
+                </Alert>
+            )}
+
+            {creationError && (
+                 <Alert variant="destructive">
+                    <VenetianMask className="h-4 w-4" />
+                    <AlertTitle>Stylist's Verdict</AlertTitle>
+                    <AlertDescription>{creationError}</AlertDescription>
                 </Alert>
             )}
 

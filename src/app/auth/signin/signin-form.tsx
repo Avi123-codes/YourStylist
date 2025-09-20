@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -20,6 +21,8 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const signInSchema = z.object({
   email: z.string().email("Invalid email address."),
@@ -30,6 +33,7 @@ export function SignInForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -41,6 +45,7 @@ export function SignInForm() {
 
   async function onSubmit(values: z.infer<typeof signInSchema>) {
     setIsLoading(true);
+    setError(null);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
@@ -49,11 +54,9 @@ export function SignInForm() {
       });
       router.push('/dashboard');
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign In Failed",
-        description: error.message,
-      });
+      // Make firebase error messages more user-friendly
+      let message = error.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.$/, '');
+      setError(message);
     } finally {
         setIsLoading(false);
     }
@@ -68,6 +71,13 @@ export function SignInForm() {
         <CardContent>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                 {error && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Sign In Failed</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
                 <FormField
                 control={form.control}
                 name="email"
