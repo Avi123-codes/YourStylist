@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { usePathname, useRouter } from 'next/navigation';
-import { onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export type ClothingItem = {
   id: string;
@@ -22,6 +22,7 @@ export type UserProfile = {
   faceScan: string | null;
   bodyScan: string | null;
   closetItems: ClothingItem[];
+  email?: string; // Add email to profile
 };
 
 type UserProfileContextType = {
@@ -42,25 +43,23 @@ const initialProfile: UserProfile = {
     faceScan: null,
     bodyScan: null,
     closetItems: [],
+    email: '',
 };
 
-
 function UserProfileHandler({ children }: { children: ReactNode }) {
-  const { user, loading } = useUserProfile();
+  const { user, loading, profile } = useUserProfile();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     if (loading) return;
 
-    const publicPaths = ['/', '/auth/signin', '/auth/signup'];
-    const isPublicPath = publicPaths.includes(pathname);
+    const protectedPaths = ['/dashboard', '/onboarding'];
+    const isProtectedPath = protectedPaths.some(p => pathname.startsWith(p));
 
-    // Only redirect if user is not logged in and not on a public page.
-    if (!user && !isPublicPath) {
-        router.push('/auth/signin');
+    if (!user && isProtectedPath) {
+      router.push('/auth/signin');
     }
-    
   }, [user, pathname, router, loading]);
 
   if (loading) {
@@ -74,7 +73,6 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-
 export function UserProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile>(initialProfile);
   const [user, setUser] = useState<User | null>(null);
@@ -85,23 +83,26 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     setIsClient(true);
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (!currentUser) {
-        setLoading(false);
-      }
+      setLoading(!currentUser); // Stop loading if no user
     });
-
     return () => authUnsubscribe();
   }, []);
 
   useEffect(() => {
     if (user) {
-      setLoading(true);
       const docRef = doc(db, 'users', user.uid);
-      const firestoreUnsubscribe = onSnapshot(docRef, (docSnap) => {
+      const firestoreUnsubscribe = onSnapshot(docRef, async (docSnap) => {
         if (docSnap.exists()) {
           setProfileState(docSnap.data() as UserProfile);
         } else {
-            setProfileState(initialProfile);
+          // If doc doesn't exist, this is likely a new user.
+          // Create the profile document.
+          const newProfile: UserProfile = {
+            ...initialProfile,
+            email: user.email || '',
+          };
+          await setDoc(docRef, newProfile);
+          setProfileState(newProfile);
         }
         setLoading(false);
       }, (error) => {
@@ -111,6 +112,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       });
       return () => firestoreUnsubscribe();
     } else {
+      // No user, reset state and stop loading
       setProfileState(initialProfile);
       setLoading(false);
     }
@@ -127,7 +129,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
           }
       }
   }
-  
+
   if (!isClient) {
     return (
         <div className="flex h-screen items-center justify-center">

@@ -18,16 +18,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Enable offline persistence
-enableIndexedDbPersistence(db)
-  .catch((err) => {
+try {
+    enableIndexedDbPersistence(db);
+} catch (err: any) {
     if (err.code == 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time.
-      console.log('Firestore persistence failed: multiple tabs open.');
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        console.log('Firestore persistence failed: multiple tabs open.');
     } else if (err.code == 'unimplemented') {
-      // The current browser does not support all of the features required to enable persistence
-      console.log('Firestore persistence failed: browser does not support it.');
+        // The current browser does not support all of the features required to enable persistence
+        console.log('Firestore persistence failed: browser does not support it.');
     }
-  });
+}
 
 
 // --- Firestore Service Functions ---
