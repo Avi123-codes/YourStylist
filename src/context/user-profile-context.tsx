@@ -46,7 +46,7 @@ const initialProfile: UserProfile = {
 
 
 function UserProfileHandler({ children }: { children: ReactNode }) {
-  const { profile, setProfile, user, loading } = useUserProfile();
+  const { user, loading } = useUserProfile();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -55,13 +55,10 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
 
     const publicPaths = ['/', '/auth/signin', '/auth/signup'];
     const isPublicPath = publicPaths.includes(pathname);
-    const authPaths = ['/auth/signin', '/auth/signup'];
-    const isAuthPath = authPaths.includes(pathname);
 
+    // Only redirect if user is not logged in and not on a public page.
     if (!user && !isPublicPath) {
         router.push('/auth/signin');
-    } else if (user && isAuthPath) {
-        router.push('/dashboard');
     }
     
   }, [user, pathname, router, loading]);
