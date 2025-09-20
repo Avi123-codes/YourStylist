@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, getUserProfile, updateUserProfile, db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { usePathname, useRouter } from 'next/navigation';
 import { onSnapshot, doc } from 'firebase/firestore';
 
@@ -52,62 +52,64 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      setUser(user); // Set user immediately
-      if (!user) {
-        // Not logged in
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        // User is logged out
         setProfileState(initialProfile);
         setLoading(false);
-        // If user is not logged in, and tries to access a protected route, redirect to signin.
-        if (pathname.startsWith('/dashboard') || pathname === '/onboarding') {
-          router.push('/auth/signin');
-        }
       }
-      // If user is logged in, the next useEffect will handle data fetching and redirects.
+      // if user is logged in, we wait for the firestore listener to set loading to false
     });
-
-    return () => unsubscribeAuth();
-  }, [router, pathname]);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    if (!user) {
-        // If there's no user, we don't need to listen to Firestore.
-        // The auth state listener above handles the non-logged-in case.
-        setLoading(false);
-        return;
+    if (loading) return; // Don't run routing logic while initial loading is in progress
+
+    const protectedPaths = ['/dashboard', '/onboarding'];
+    const authPaths = ['/auth/signin', '/auth/signup'];
+    
+    const isProtectedRoute = protectedPaths.some(p => pathname.startsWith(p));
+    const isAuthPath = authPaths.some(p => pathname.startsWith(p));
+
+    if (!user && isProtectedRoute) {
+        router.push('/auth/signin');
+    } else if (user && isAuthPath) {
+        router.push('/dashboard');
     }
 
-    // User is logged in, now listen for their profile changes.
-    const userDocRef = doc(db, 'users', user.uid);
-    const unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
-        setLoading(false);
-        if (docSnap.exists()) {
-            // Profile exists
-            setProfileState(docSnap.data() as UserProfile);
-            // If logged in and on an auth page, redirect to dashboard
-            if (pathname.startsWith('/auth')) {
-                router.push('/dashboard');
-            }
-        } else {
-            // Profile doesn't exist, likely a new user.
-            // Redirect to onboarding unless they are on an auth page.
-            if (pathname !== '/onboarding' && !pathname.startsWith('/auth')) {
-                router.push('/onboarding');
-            }
-        }
-    }, (error) => {
-        console.error("Firestore snapshot error:", error);
-        setLoading(false); // Stop loading even if there's an error
-    });
+  }, [user, pathname, router, loading]);
 
-    return () => unsubscribeFirestore();
+  useEffect(() => {
+    if (user) {
+      const docRef = doc(db, 'users', user.uid);
+      const unsubscribe = onSnapshot(docRef, async (docSnap) => {
+        if (docSnap.exists()) {
+          const profileData = docSnap.data() as UserProfile;
+          setProfileState(profileData);
+        } else {
+          // If no profile exists, direct to onboarding unless on an auth page
+          if (!pathname.startsWith('/auth')) {
+             router.push('/onboarding');
+          }
+        }
+        setLoading(false);
+      }, (error) => {
+        console.error("Firestore error:", error);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }
   }, [user, router, pathname]);
-  
+
   const handleSetProfile = async (newProfile: UserProfile) => {
       setProfileState(newProfile); // Optimistic update
       if (user) {
           try {
-              await updateUserProfile(user.uid, newProfile);
+              const userDocRef = doc(db, 'users', user.uid);
+              // Use setDoc with merge:true which is equivalent to update but creates if it doesn't exist
+              await setDoc(userDocRef, newProfile, { merge: true });
           } catch (error) {
               console.error("Failed to update profile in Firestore:", error);
               // Optionally revert optimistic update or show toast
