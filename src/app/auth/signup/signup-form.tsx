@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -49,7 +50,7 @@ export function SignUpForm() {
         title: "Account Created",
         description: "You have been successfully signed up.",
       });
-      router.push('/onboarding');
+      router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: "destructive",
