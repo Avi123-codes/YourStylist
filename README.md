@@ -1,49 +1,60 @@
-# Firebase Studio
+# YourStylist: Your AI-Powered Personal Stylist
 
-This is a NextJS starter in Firebase Studio.
+Welcome to YourStylist! This application is designed to be your personal AI companion for all things fashion and style. It uses artificial intelligence to provide personalized recommendations for hairstyles, clothing, and outfits, tailored specifically to you.
 
-To get started, take a look at src/app/page.tsx.
+## How to Get Your Code
 
-## Making Your App Public: From Project to Production
+To download your project files, look for an **"Export"** or **"Download ZIP"** button in the Firebase Studio interface. This will save all your app's code to your computer, which you can then upload to a GitHub repository or use in any local code editor.
 
-You've built a web application. The next step is to make it available for everyone to use. Here’s a guide to understanding your options.
+---
 
-### 1. Deploying Your Web App
+## Getting Started
 
-The first step is to "publish" your web app to a hosting service. This will give you a public URL that anyone can visit. Since this project uses Firebase, the most straightforward option is **Firebase Hosting**.
+Using YourStylist is simple. Here’s how you can get started and make the most of its features.
 
-To deploy your app:
-1.  Install the Firebase CLI: `npm install -g firebase-tools`
-2.  Login to your Firebase account: `firebase login`
-3.  Initialize Firebase in your project: `firebase init hosting`
-    *   Select your Firebase project.
-    *   Use `out` as your public directory (you'll need to configure your `next.config.ts` to export the static site to the `out` directory).
-    *   Configure as a single-page app (rewrite all urls to /index.html).
-4.  Deploy your app: `firebase deploy`
+### 1. Create Your Account
+First, you'll need to sign up. 
+- Click on the **"Get Started"** button on the landing page.
+- You will be asked to provide an email and create a password.
+- Once you've signed up, you'll be taken to the main dashboard.
 
-After deploying, Firebase will give you a live URL where your app can be accessed by anyone. It will look something like `your-project-name.web.app` or `your-project-name.firebaseapp.com`.
+### 2. Set Up Your Profile
+For the AI to give you the best recommendations, it needs to know a little about you. You can do this at any time by going to the **Profile** tab in the navigation bar.
 
-### 2. Getting a Professional URL (Custom Domain)
+In your profile, you can provide:
+- **Personal Details:** Your name, age, gender, height, and weight.
+- **Face Scan:** Upload a clear, forward-facing photo of your face. This is essential for the **Hairstyle Suggestions** feature.
+- **Body Scan:** Upload a clear, full-body photo. This is used for the **Wardrobe Builder** and **Virtual Tryouts**.
 
-The default Firebase URL is great for testing, but for a real product, you'll want a custom domain (e.g., `www.yourstylist.com`).
+### 3. Explore the Features
 
-1.  **Buy a Domain:** First, purchase a domain from a domain registrar like Google Domains, Namecheap, GoDaddy, etc.
-2.  **Connect to Firebase:** In the Firebase Console, go to the "Hosting" section. Click on "Add custom domain" and follow the on-screen instructions. Firebase will guide you through the process of verifying your domain ownership and pointing it to your deployed app.
+Once your profile is set up, you can start exploring the app's core features from the bottom navigation bar.
 
-### 3. Making it Feel Like an App (Progressive Web App - PWA)
+#### Hairstyle Suggestions (`Scissors` icon)
+- **What it does:** Suggests hairstyles that would suit your face shape.
+- **How to use it:** Make sure you have a face scan uploaded in your profile. The app will display your scan, and you can click the **"Suggest Hairstyles"** button to get five different hairstyle ideas, complete with trendiness ratings and tips on what to say to your barber.
 
-You can enhance your web app to behave more like a native app by turning it into a Progressive Web App (PWA). This gives you features like:
-*   **Installable:** Users can add your app to their phone's home screen.
-*   **Offline Support:** The app can work even without an internet connection.
-*   **Push Notifications:** You can send notifications to your users.
+#### Wardrobe Builder (`Shirt` icon)
+- **What it does:** Recommends new clothing items based on your style preferences and body type. It can also analyze your colors to find what suits you best.
+- **How to use it:** 
+    1. Make sure you have a body scan uploaded.
+    2. (Optional) Use the **"Analyze My Colors"** feature by providing a face scan to see which colors flatter you.
+    3. Fill in your style, color, and price preferences and click **"Suggest Wardrobe"**. The AI will generate four new item suggestions for you.
 
-This doesn't get your app into the app stores, but it provides a very similar user experience.
+#### OOTD Rating (`Star` icon)
+- **What it does:** Rates your "Outfit of the Day" out of 10 and gives you feedback.
+- **How to use it:** Upload a photo of your current outfit. Click **"Rate My Outfit"** to get a score and actionable suggestions for improvement from the AI stylist.
 
-### 4. Getting into the App Stores (Advanced)
+#### Virtual Tryouts (`Sparkles` icon)
+- **What it does:** Analyzes a combination of clothing items to see how well they work together for a specific occasion.
+- **How to use it:** 
+    1. Upload images for different clothing categories (Tops, Bottoms, etc.).
+    2. Specify the occasion (e.g., "Date Night").
+    3. Click **"Analyze My Outfit"** to get a rating and detailed feedback on how well the items work together.
 
-If your goal is to be in the Apple App Store or Google Play Store, you need to package your web application into a "native wrapper." Tools like [Capacitor](https://capacitorjs.com/) or [React Native's WebView](https://reactnative.dev/docs/webview) can do this.
-
-*   **How it works:** These tools create a native mobile app that essentially acts as a dedicated browser for your web application.
-*   **This is an advanced step:** It involves learning new tools, configuring native projects for iOS and Android, and submitting your app for review, which has its own set of guidelines and potential challenges.
-
-**Recommendation:** Start by deploying your project with Firebase Hosting. Once it's live, connect a custom domain. This is the quickest way to get it in front of users with a professional address. From there, you can decide if evolving it into a PWA or a fully wrapped native app is the right next step for you.
+#### Digital Closet (`Gallery` icon)
+- **What it does:** Lets you create a digital version of your own wardrobe and get outfit suggestions using the clothes you already own.
+- **How to use it:**
+    1. Upload pictures of your clothes. The AI will automatically generate a short description for each item.
+    2. Enter an occasion (e.g., "Work meeting").
+    3. Click **"Create Outfit"**, and the AI will assemble an outfit for you using items from your digital closet.
