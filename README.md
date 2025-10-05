@@ -2,15 +2,11 @@
 
 Welcome to YourStylist! This application is designed to be your personal AI companion for all things fashion and style. It uses artificial intelligence to provide personalized recommendations for hairstyles, clothing, and outfits, tailored specifically to you.
 
-## How to Get Your Code
 
-To download your project files, look for an **"Export"** or **"Download ZIP"** button in the Firebase Studio interface. This will save all your app's code to your computer, which you can then upload to a GitHub repository or use in any local code editor.
-
----
 
 ## Getting Started
 
-Using YourStylist is simple. Here’s how you can get started and make the most of its features.
+Using YourStylist is simple. Here’s how you can get started and make the most of its features.- You can visit -> https://studio--studio-1651390566-f510f.us-central1.hosted.app
 
 ### 1. Create Your Account
 First, you'll need to sign up. 
