@@ -6,7 +6,7 @@ Welcome to YourStylist! This application is designed to be your personal AI comp
 
 ## Getting Started
 
-Using YourStylist is simple. Here’s how you can get started and make the most of its features.- You can visit -> https://studio--studio-1651390566-f510f.us-central1.hosted.app
+Using YourStylist is simple. Here’s how you can get started and make the most of its features.- You can visit ->https://studio--studio-1651390566-f510f.us-central1.hosted.app
 
 ### 1. Create Your Account
 First, you'll need to sign up. 
