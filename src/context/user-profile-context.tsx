@@ -47,12 +47,12 @@ const initialProfile: UserProfile = {
 };
 
 function UserProfileHandler({ children }: { children: ReactNode }) {
-  const { user, loading, profile } = useUserProfile();
+  const { user, loading } = useUserProfile();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; // Wait until authentication check is complete
 
     const protectedPaths = ['/dashboard', '/onboarding'];
     const isProtectedPath = protectedPaths.some(p => pathname.startsWith(p));
@@ -61,7 +61,7 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
       router.push('/auth/signin');
     }
   }, [user, pathname, router, loading]);
-
+  
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -70,33 +70,35 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
     );
   }
 
+
   return <>{children}</>;
 }
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile>(initialProfile);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
 
   useEffect(() => {
-    setIsClient(true);
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(!currentUser); // Stop loading if no user
+      // If there's no user, we're done loading.
+      if (!currentUser) {
+        setLoading(false);
+      }
     });
     return () => authUnsubscribe();
   }, []);
 
   useEffect(() => {
+    // If we have a user, subscribe to their profile document
     if (user) {
       const docRef = doc(db, 'users', user.uid);
       const firestoreUnsubscribe = onSnapshot(docRef, async (docSnap) => {
         if (docSnap.exists()) {
           setProfileState(docSnap.data() as UserProfile);
         } else {
-          // If doc doesn't exist, this is likely a new user.
-          // Create the profile document.
+          // If doc doesn't exist, create it for the new user
           const newProfile: UserProfile = {
             ...initialProfile,
             email: user.email || '',
@@ -104,17 +106,16 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
           await setDoc(docRef, newProfile);
           setProfileState(newProfile);
         }
-        setLoading(false);
+        setLoading(false); // We are done loading once we get the data (or create it)
       }, (error) => {
         console.error("Firestore snapshot error:", error);
         setProfileState(initialProfile);
-        setLoading(false);
+        setLoading(false); // Also stop loading on error
       });
       return () => firestoreUnsubscribe();
     } else {
-      // No user, reset state and stop loading
+      // If there's no user, reset the profile state
       setProfileState(initialProfile);
-      setLoading(false);
     }
   }, [user]);
 
@@ -128,14 +129,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
               console.error("Failed to update profile in Firestore:", error);
           }
       }
-  }
-
-  if (!isClient) {
-    return (
-        <div className="flex h-screen items-center justify-center">
-            <p>Loading...</p>
-        </div>
-    );
   }
 
   return (
@@ -154,3 +147,4 @@ export function useUserProfile() {
   }
   return context;
 }
+
