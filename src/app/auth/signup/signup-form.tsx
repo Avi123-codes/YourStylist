@@ -47,12 +47,14 @@ export function SignUpForm() {
     setIsLoading(true);
     setError(null);
     try {
+      // This will trigger the onAuthStateChanged in the provider
       await createUserWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: "Account Created",
-        description: "You have been successfully signed up.",
+        description: "Welcome! Let's set up your profile.",
       });
-      router.push('/dashboard');
+      // The provider will handle the redirect to /onboarding
+      router.push('/onboarding');
     } catch (error: any) {
         let message = "An unknown error occurred. Please try again.";
         switch (error.code) {
