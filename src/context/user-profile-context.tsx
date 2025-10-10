@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { usePathname, useRouter } from 'next/navigation';
-import { onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
+import { onSnapshot, doc, setDoc } from 'firebase/firestore';
 
 export type ClothingItem = {
   id: string;
@@ -22,7 +22,7 @@ export type UserProfile = {
   faceScan: string | null;
   bodyScan: string | null;
   closetItems: ClothingItem[];
-  email?: string; // Add email to profile
+  email?: string;
 };
 
 type UserProfileContextType = {
@@ -52,24 +52,29 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (loading) return; // Wait until authentication check is complete
+    if (loading) return; 
 
     const protectedPaths = ['/dashboard', '/onboarding'];
     const isProtectedPath = protectedPaths.some(p => pathname.startsWith(p));
+    const isAuthPath = pathname.startsWith('/auth');
 
     if (!user && isProtectedPath) {
       router.push('/auth/signin');
     }
+
+    if(user && isAuthPath) {
+      router.push('/dashboard');
+    }
+
   }, [user, pathname, router, loading]);
   
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
-
 
   return <>{children}</>;
 }
@@ -77,12 +82,11 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
 export function UserProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile>(initialProfile);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      // If there's no user, we're done loading.
       if (!currentUser) {
         setLoading(false);
       }
@@ -91,7 +95,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // If we have a user, subscribe to their profile document
     if (user) {
       const docRef = doc(db, 'users', user.uid);
       const firestoreUnsubscribe = onSnapshot(docRef, async (docSnap) => {
@@ -103,30 +106,36 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
             ...initialProfile,
             email: user.email || '',
           };
-          await setDoc(docRef, newProfile);
-          setProfileState(newProfile);
+          try {
+             await setDoc(docRef, newProfile);
+             setProfileState(newProfile);
+          } catch (error) {
+              console.error("Error creating new user profile doc:", error);
+          }
         }
-        setLoading(false); // We are done loading once we get the data (or create it)
+        setLoading(false);
       }, (error) => {
         console.error("Firestore snapshot error:", error);
         setProfileState(initialProfile);
-        setLoading(false); // Also stop loading on error
+        setLoading(false);
       });
       return () => firestoreUnsubscribe();
     } else {
-      // If there's no user, reset the profile state
       setProfileState(initialProfile);
     }
   }, [user]);
 
   const handleSetProfile = async (newProfile: UserProfile) => {
+      // Optimistically update local state
       setProfileState(newProfile);
       if (user) {
           try {
               const userDocRef = doc(db, 'users', user.uid);
+              // Use setDoc with merge to update or create
               await setDoc(userDocRef, newProfile, { merge: true });
           } catch (error) {
               console.error("Failed to update profile in Firestore:", error);
+              // Optionally revert local state if firestore fails
           }
       }
   }
@@ -147,4 +156,3 @@ export function useUserProfile() {
   }
   return context;
 }
-
