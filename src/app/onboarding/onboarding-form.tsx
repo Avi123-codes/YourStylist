@@ -18,10 +18,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Camera, Trash2, ArrowRight } from "lucide-react";
+import { Camera, Trash2, ArrowRight, LogOut } from "lucide-react";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { signOut as firebaseSignOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -68,6 +70,7 @@ export function OnboardingForm() {
     if (user) {
         // Function to convert cm to feet and inches
         const toImperialHeight = (cm: string) => {
+            if (!cm || isNaN(parseFloat(cm))) return { feet: '', inches: '' };
             const totalInches = parseFloat(cm) / 2.54;
             const feet = Math.floor(totalInches / 12);
             const inches = Math.round(totalInches % 12);
@@ -76,6 +79,7 @@ export function OnboardingForm() {
 
         // Function to convert kg to lbs
         const toImperialWeight = (kg: string) => {
+             if (!kg || isNaN(parseFloat(kg))) return '';
             const lbs = parseFloat(kg) * 2.20462;
             return lbs > 0 ? Math.round(lbs).toString() : '';
         };
@@ -130,6 +134,24 @@ export function OnboardingForm() {
     });
     router.push('/dashboard');
   }
+
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+      router.push('/auth/signin');
+    } catch (error) {
+      console.error("Sign out error", error);
+      toast({
+        title: "Sign Out Error",
+        description: "There was a problem signing you out.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>, type: 'faceScan' | 'bodyScan') => {
     const file = e.target.files?.[0];
@@ -306,9 +328,13 @@ export function OnboardingForm() {
             <ImageUploader type="bodyScan" />
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+            <Button type="button" variant="outline" onClick={handleSignOut}>
+                <LogOut className="mr-2"/>
+                Sign Out
+            </Button>
             <Button type="submit" size="lg">
-                Continue to Dashboard
+                Save & Continue to Dashboard
                 <ArrowRight className="ml-2"/>
             </Button>
         </div>
@@ -316,3 +342,4 @@ export function OnboardingForm() {
     </Form>
   );
 }
+
