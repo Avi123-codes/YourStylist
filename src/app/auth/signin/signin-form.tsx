@@ -54,8 +54,21 @@ export function SignInForm() {
       });
       router.push('/dashboard');
     } catch (error: any) {
-      // Make firebase error messages more user-friendly
-      let message = error.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.$/, '');
+      let message = "An unknown error occurred. Please try again.";
+      switch (error.code) {
+          case 'auth/user-not-found':
+              message = "No account found with this email address.";
+              break;
+          case 'auth/wrong-password':
+              message = "Incorrect password. Please try again.";
+              break;
+          case 'auth/invalid-email':
+              message = "The email address is not valid.";
+              break;
+          default:
+              message = error.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.$/, '');
+              break;
+      }
       setError(message);
     } finally {
         setIsLoading(false);
@@ -118,4 +131,6 @@ export function SignInForm() {
         </CardContent>
     </Card>
   );
+}
+
 }
