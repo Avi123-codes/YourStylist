@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, createUserProfile } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -48,8 +48,9 @@ export function SignUpForm() {
     setIsLoading(true);
     setError(null);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      await createUserProfile(userCredential.user.uid, values.email);
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // The UserProfileProvider will automatically create the profile document on first login.
+      // No need to call createUserProfile here.
       toast({
         title: "Account Created",
         description: "You have been successfully signed up.",
