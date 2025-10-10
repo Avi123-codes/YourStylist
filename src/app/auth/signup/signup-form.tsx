@@ -32,9 +32,8 @@ const signUpSchema = z.object({
 export function SignUpForm() {
   const { toast } = useToast();
   const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -49,17 +48,28 @@ export function SignUpForm() {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
-      // The UserProfileProvider will automatically create the profile document on first login.
-      // No need to call createUserProfile here.
       toast({
         title: "Account Created",
         description: "You have been successfully signed up.",
       });
       router.push('/dashboard');
     } catch (error: any) {
-      // Make firebase error messages more user-friendly
-      let message = error.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.$/, '');
-      setError(message);
+        let message = "An unknown error occurred. Please try again.";
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                message = "This email address is already in use by another account.";
+                break;
+            case 'auth/invalid-email':
+                message = "The email address is not valid.";
+                break;
+            case 'auth/weak-password':
+                message = "The password is too weak. Please use at least 6 characters.";
+                break;
+            default:
+                message = error.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.$/, '');
+                break;
+        }
+        setError(message);
     } finally {
         setIsLoading(false);
     }
@@ -67,58 +77,59 @@ export function SignUpForm() {
 
   return (
     <Card>
-        <CardHeader className="text-center">
-            <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-            <CardDescription>Join YourStylist to get personalized style advice</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Sign Up Failed</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-                <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                        <Input type="email" placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating Account...' : 'Sign Up'}
-                </Button>
-            </form>
-            </Form>
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <Link href="/auth/signin" className="font-medium text-primary hover:underline">
-                    Sign In
-                </Link>
-            </p>
-        </CardContent>
+      <CardHeader className="text-center">
+        <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
+        <CardDescription>Join YourStylist to get personalized style advice</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {error && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Sign Up Failed</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="you@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Creating Account...' : 'Sign Up'}
+            </Button>
+          </form>
+        </Form>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/auth/signin" className="font-medium text-primary hover:underline">
+            Sign In
+          </Link>
+        </p>
+      </CardContent>
     </Card>
   );
 }
+
