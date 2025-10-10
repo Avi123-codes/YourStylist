@@ -52,23 +52,28 @@ function UserProfileHandler({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (loading) return; 
+    if (loading) {
+      return; // Do nothing while loading
+    }
 
-    const protectedPaths = ['/dashboard', '/onboarding'];
-    const isProtectedPath = protectedPaths.some(p => pathname.startsWith(p));
     const isAuthPath = pathname.startsWith('/auth');
+    const isProtectedPath = !isAuthPath && !pathname.endsWith('/'); // Anything not auth or landing
 
+    // If there's no user and they're on a protected page, redirect to sign-in
     if (!user && isProtectedPath) {
       router.push('/auth/signin');
     }
 
-    if(user && isAuthPath) {
+    // If there is a user and they're on an auth page, redirect to the dashboard
+    if (user && isAuthPath) {
       router.push('/dashboard');
     }
 
-  }, [user, pathname, router, loading]);
+  }, [user, loading, pathname, router]);
   
-  if (loading) {
+  // Show loading screen only on protected paths while loading
+  const isProtectedPath = !pathname.startsWith('/auth') && !pathname.endsWith('/');
+  if (loading && isProtectedPath) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
@@ -88,7 +93,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        setLoading(false);
+        setLoading(false); // If no user, we are done loading.
       }
     });
     return () => authUnsubscribe();
@@ -113,11 +118,11 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
               console.error("Error creating new user profile doc:", error);
           }
         }
-        setLoading(false);
+        setLoading(false); // Data loaded or created, we are done loading.
       }, (error) => {
         console.error("Firestore snapshot error:", error);
         setProfileState(initialProfile);
-        setLoading(false);
+        setLoading(false); // Error occurred, stop loading.
       });
       return () => firestoreUnsubscribe();
     } else {
